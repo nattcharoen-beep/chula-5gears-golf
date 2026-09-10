@@ -1,7 +1,8 @@
 import React from 'react';
 import { Flight, FLIGHTS } from '../types/golf';
-import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { AlertTriangle, RotateCcw, QrCode } from 'lucide-react';
 import { BulletStatus } from '../utils/bulletManager';
+import { ShareModal } from './ShareModal';
 
 interface HeaderProps {
   currentHole: number;
@@ -25,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   onResetRound,
 }) => {
   const [rawHcp, setRawHcp] = React.useState(String(handicap));
+  const [showShare, setShowShare] = React.useState(false);
 
   React.useEffect(() => {
     setRawHcp(String(handicap));
@@ -51,8 +53,18 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Bullets & Reset Button */}
-        <div className="flex items-center gap-2">
+        {/* Bullets, QR Share & Reset Button */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setShowShare(true)}
+            className="px-2.5 py-1 rounded-lg bg-pink-600/20 hover:bg-pink-600/30 text-pink-300 border border-pink-500/40 text-xs font-bold transition flex items-center gap-1.5 active:scale-95 shadow"
+            title="สแกน QR Code / แชร์แอปให้เพื่อน"
+          >
+            <QrCode className="w-3.5 h-3.5 text-pink-400" />
+            <span>QR / แชร์</span>
+          </button>
+
           <div className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 text-xs font-bold ${bulletStatus.statusColor}`}>
             <span>🎯</span>
             <span>
@@ -60,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>{bulletStatus.bulletsRemaining} นัด</span>
               ) : (
                 <span className="text-red-400 flex items-center gap-0.5">
-                  <AlertTriangle className="w-3 h-3" /> 0 นัด (DQ!)
+                  <AlertTriangle className="w-3 h-3" /> 0 นัด
                 </span>
               )}
             </span>
@@ -75,6 +87,8 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
       </div>
+
+      <ShareModal isOpen={showShare} onClose={() => setShowShare(false)} />
 
       {/* Quick Settings & Flight Selector */}
       <div className="bg-slate-950/80 border-t border-slate-800/80 px-3.5 py-1.5">
