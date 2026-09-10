@@ -72,7 +72,10 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>🎯</span>
                 <span>
                   {bulletStatus.bulletsRemaining > 0 ? (
-                    <span>{bulletStatus.bulletsRemaining} นัด</span>
+                    <span>
+                      {bulletStatus.bulletsRemaining}
+                      {bulletStatus.extraBufferStrokes > 0 ? `+${bulletStatus.extraBufferStrokes}` : ''} นัด
+                    </span>
                   ) : (
                     <span className="text-red-400 flex items-center gap-0.5">
                       <AlertTriangle className="w-3 h-3" /> 0 นัด

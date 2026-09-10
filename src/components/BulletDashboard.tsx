@@ -58,6 +58,11 @@ export const BulletDashboard: React.FC<BulletDashboardProps> = ({ bulletStatus }
               <span>🎯 กระสุนโควตาอันเดอร์พาร์:</span>
               <span className="text-pink-400 font-bold">
                 {bulletStatus.bulletsRemaining} / 4 นัด
+                {bulletStatus.extraBufferStrokes > 0 && (
+                  <span className="ml-1.5 text-emerald-400 text-[11px] font-bold">
+                    (+{bulletStatus.extraBufferStrokes} สโตรกสะสม)
+                  </span>
+                )}
               </span>
             </span>
             <span className="text-slate-500 text-[11px]">

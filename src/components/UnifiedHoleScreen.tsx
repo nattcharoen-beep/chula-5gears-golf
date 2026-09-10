@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   HoleConfig,
   ScoreType,
@@ -55,6 +55,12 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
     'easy_tap_in' | 'medium_6_10ft' | 'difficult_downhill'
   >('medium_6_10ft');
 
+  // Reset Chula's putt target & difficulty on hole navigation so state from previous hole does not bleed over
+  useEffect(() => {
+    setChulaTargetScore('par');
+    setChulaPuttDifficulty('medium_6_10ft');
+  }, [currentHole]);
+
   const [showMatrix, setShowMatrix] = useState<boolean>(false);
 
   // Run Game Theory Decision Engine (strictly integers, no decimals!)
@@ -74,6 +80,7 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
 
   // Shot helper for "คนที่ตีหลังเรา"
   const shotOptions: { shotNum: number; target: ScoreType; label: string; scoreName: string }[] = [
+    ...(par >= 5 ? [{ shotNum: par - 2, target: 'eagle' as ScoreType, label: `ช็อต ${par - 2}`, scoreName: 'อีเกิ้ล (-2)' }] : []),
     { shotNum: par - 1, target: 'birdie', label: `ช็อต ${par - 1}`, scoreName: 'ดี้ (-1)' },
     { shotNum: par, target: 'par', label: `ช็อต ${par}`, scoreName: 'พาร์ (E)' },
     { shotNum: par + 1, target: 'bogey', label: `ช็อต ${par + 1}`, scoreName: 'กี้ (+1)' },
@@ -169,15 +176,17 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
 
                 {opp.isFinished ? (
                   /* Option A: จบแล้ว */
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {(['birdie', 'par', 'bogey', 'double'] as ScoreType[]).map((sc) => (
+                  <div className="grid grid-cols-5 gap-1">
+                    {(['eagle', 'birdie', 'par', 'bogey', 'double'] as ScoreType[]).map((sc) => (
                       <button
                         key={sc}
                         type="button"
                         onClick={() => onUpdateOpponent(currentHole, opp.universityId, { finishedScore: sc })}
                         className={`py-2 rounded-lg text-xs font-black transition active:scale-95 ${
                           opp.finishedScore === sc
-                            ? sc === 'birdie'
+                            ? sc === 'eagle'
+                              ? 'bg-amber-500 text-slate-950 shadow-md ring-1 ring-white'
+                              : sc === 'birdie'
                               ? 'bg-red-600 text-white shadow-md ring-1 ring-white'
                               : sc === 'par'
                               ? 'bg-emerald-600 text-white shadow-md ring-1 ring-white'
@@ -187,7 +196,7 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                             : 'bg-slate-900 text-slate-400 hover:bg-slate-800 border border-slate-800'
                         }`}
                       >
-                        {sc === 'birdie' ? 'ดี้ (-1)' : sc === 'par' ? 'พาร์ (E)' : sc === 'bogey' ? 'กี้ (+1)' : 'ดับ (+2)'}
+                        {sc === 'eagle' ? 'อีเกิ้ล (-2)' : sc === 'birdie' ? 'ดี้ (-1)' : sc === 'par' ? 'พาร์ (E)' : sc === 'bogey' ? 'กี้ (+1)' : 'ดับ (+2)'}
                       </button>
                     ))}
                   </div>
@@ -202,7 +211,7 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                           {opp.pendingTargetScore.toUpperCase()}
                         </span>
                       </div>
-                      <div className="grid grid-cols-4 gap-1.5">
+                      <div className={`grid ${par >= 5 ? 'grid-cols-5' : 'grid-cols-4'} gap-1.5`}>
                         {shotOptions.map((opt) => {
                           const isSelected = opp.pendingTargetScore === opt.target;
                           return (
@@ -217,7 +226,9 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                               }
                               className={`py-1.5 px-1 rounded-lg text-center transition active:scale-95 flex flex-col items-center justify-center ${
                                 isSelected
-                                  ? opt.target === 'birdie'
+                                  ? opt.target === 'eagle'
+                                    ? 'bg-amber-500 text-slate-950 shadow-md ring-1 ring-white'
+                                    : opt.target === 'birdie'
                                     ? 'bg-red-600 text-white shadow-md ring-1 ring-white'
                                     : opt.target === 'par'
                                     ? 'bg-emerald-600 text-white shadow-md ring-1 ring-white'
@@ -305,14 +316,28 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
           <div className="text-[10px] text-slate-400 mb-1.5 flex items-center justify-between">
             <span>ช็อตพัตต์นี้กำลังลุ้น:</span>
             <span className="text-pink-400 font-bold">
-              {chulaTargetScore === 'birdie'
+              {chulaTargetScore === 'eagle'
+                ? `ช็อต ${Math.max(1, par - 2)} (ลุ้นอีเกิ้ล)`
+                : chulaTargetScore === 'birdie'
                 ? `ช็อต ${par - 1} (ลุ้นเบอร์ดี้)`
                 : chulaTargetScore === 'par'
                 ? `ช็อต ${par} (ลุ้นพาร์)`
                 : `ช็อต ${par + 1} (ลุ้นโบกี้)`}
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setChulaTargetScore('eagle')}
+              className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 flex flex-col items-center justify-center ${
+                chulaTargetScore === 'eagle'
+                  ? 'bg-amber-500 text-slate-950 shadow-lg ring-2 ring-amber-300'
+                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              <span className="text-xs font-black">🦅 ลุ้นอีเกิ้ล</span>
+              <span className="text-[9px] opacity-80">(-2) ช็อต {Math.max(1, par - 2)}</span>
+            </button>
             <button
               type="button"
               onClick={() => setChulaTargetScore('birdie')}
@@ -398,10 +423,12 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
         </div>
       </div>
 
-      {/* 4. INSTANT AI GAME THEORY RECOMMENDATION BANNER (PLACED BELOW INPUTS AS REQUESTED) */}
+      {/* 4. INSTANT AI GAME THEORY RECOMMENDATION BANNER */}
       <div
         className={`p-4 rounded-2xl border transition shadow-xl ${
-          decision.verdict === 'HUNT_BIRDIE'
+          decision.verdict === 'HUNT_EAGLE'
+            ? 'bg-gradient-to-br from-amber-950/90 via-slate-900 to-slate-950 border-amber-500/80 shadow-amber-950/40'
+            : decision.verdict === 'HUNT_BIRDIE'
             ? 'bg-gradient-to-br from-red-950/90 via-slate-900 to-slate-950 border-red-500/80 shadow-red-950/40'
             : decision.verdict === 'DUMP_HANDICAP'
             ? 'bg-gradient-to-br from-purple-950/90 via-slate-900 to-slate-950 border-purple-500/80 shadow-purple-950/40'
@@ -430,6 +457,7 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
         </div>
 
         <h2 className="text-lg sm:text-xl font-black text-white mb-1.5 flex items-center gap-1.5">
+          {decision.verdict === 'HUNT_EAGLE' && <Flame className="w-5 h-5 text-amber-400 shrink-0" />}
           {decision.verdict === 'HUNT_BIRDIE' && <Flame className="w-5 h-5 text-red-400 shrink-0" />}
           {decision.verdict === 'DUMP_HANDICAP' && <RefreshCw className="w-5 h-5 text-purple-400 shrink-0" />}
           {decision.verdict === 'ATTACK_PAR' && <Flame className="w-5 h-5 text-emerald-400 shrink-0" />}
@@ -443,8 +471,29 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
           {decision.primaryAdvice}
         </p>
 
-        {/* 4-COLUMN DISCRETE OUTCOME GRID: BIRDIE / PAR / BOGEY / DOUBLE */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+        {/* DISCRETE OUTCOME GRID: EAGLE (IF APPLICABLE) / BIRDIE / PAR / BOGEY / DOUBLE */}
+        <div className={`grid ${decision.expectedPointsIfEagle !== undefined ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'} gap-2 text-center text-xs`}>
+          {decision.expectedPointsIfEagle !== undefined && (
+            <div
+              className={`p-2 rounded-xl border ${
+                decision.verdict === 'HUNT_EAGLE'
+                  ? 'bg-amber-950/80 border-amber-400 shadow-md shadow-amber-950/50'
+                  : 'bg-slate-900/80 border-amber-500/30'
+              }`}
+            >
+              <div className="text-[10px] text-amber-300 font-bold">ถ้าทำอีเกิ้ล</div>
+              <div className="text-base font-black text-amber-200">
+                {decision.expectedPointsIfEagle > 0
+                  ? `+${decision.expectedPointsIfEagle}`
+                  : decision.expectedPointsIfEagle}{' '}
+                แต้ม
+              </div>
+              <div className="text-[9px] text-amber-400 font-bold">
+                🦅 ทุบแต้มสูงสุด
+              </div>
+            </div>
+          )}
+
           {/* 1. เบอร์ดี้ */}
           <div
             className={`p-2 rounded-xl border ${
@@ -572,6 +621,9 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                 <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
                   <tr>
                     <th className="p-2.5">ฉากทัศน์คู่แข่ง</th>
+                    {decision.expectedPointsIfEagle !== undefined && (
+                      <th className="p-2.5 text-center text-amber-400">ถ้าเราอีเกิ้ล</th>
+                    )}
                     <th className="p-2.5 text-center text-red-400">ถ้าเราดี้</th>
                     <th className="p-2.5 text-center text-emerald-400">ถ้าเราพาร์</th>
                     <th className="p-2.5 text-center text-blue-400">ถ้าเรากี้</th>
@@ -582,6 +634,16 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                   {decision.scenarioBreakdown.map((scen, sIdx) => (
                     <tr key={sIdx}>
                       <td className="p-2.5 font-medium">{scen.scenario}</td>
+                      {decision.expectedPointsIfEagle !== undefined && (
+                        <td className="p-2.5 text-center font-bold text-amber-400">
+                          {scen.chulaEaglePoints !== undefined
+                            ? scen.chulaEaglePoints > 0
+                              ? `+${scen.chulaEaglePoints}`
+                              : `${scen.chulaEaglePoints}`
+                            : '-'}{' '}
+                          แต้ม
+                        </td>
+                      )}
                       <td className="p-2.5 text-center font-bold text-red-400">
                         {scen.chulaBirdiePoints !== undefined
                           ? scen.chulaBirdiePoints > 0
@@ -627,17 +689,19 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
           )}
         </div>
 
-        <div className="grid grid-cols-4 gap-2">
-          {(['birdie', 'par', 'bogey', 'double'] as ScoreType[]).map((sc) => {
+        <div className="grid grid-cols-5 gap-1.5">
+          {(['eagle', 'birdie', 'par', 'bogey', 'double'] as ScoreType[]).map((sc) => {
             const isSelected = chulaCurrentScore === sc;
             return (
               <button
                 key={sc}
                 type="button"
                 onClick={() => handleSetChulaScore(sc)}
-                className={`py-3 rounded-xl text-sm font-black transition active:scale-95 flex flex-col items-center justify-center ${
+                className={`py-2.5 rounded-xl text-xs font-black transition active:scale-95 flex flex-col items-center justify-center ${
                   isSelected
-                    ? sc === 'birdie'
+                    ? sc === 'eagle'
+                      ? 'bg-amber-500 text-slate-950 ring-2 ring-white shadow-lg'
+                      : sc === 'birdie'
                       ? 'bg-red-600 text-white ring-2 ring-white shadow-lg'
                       : sc === 'par'
                       ? 'bg-emerald-600 text-white ring-2 ring-white shadow-lg'
@@ -648,10 +712,10 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                 }`}
               >
                 <span>
-                  {sc === 'birdie' ? 'ดี้' : sc === 'par' ? 'พาร์' : sc === 'bogey' ? 'กี้' : 'ดับเบิ้ล'}
+                  {sc === 'eagle' ? 'อีเกิ้ล' : sc === 'birdie' ? 'ดี้' : sc === 'par' ? 'พาร์' : sc === 'bogey' ? 'กี้' : 'ดับ'}
                 </span>
                 <span className="text-[10px] font-normal opacity-75">
-                  {sc === 'birdie' ? '-1' : sc === 'par' ? 'E' : sc === 'bogey' ? '+1' : '+2'}
+                  {sc === 'eagle' ? '-2' : sc === 'birdie' ? '-1' : sc === 'par' ? 'E' : sc === 'bogey' ? '+1' : '+2'}
                 </span>
               </button>
             );

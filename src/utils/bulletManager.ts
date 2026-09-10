@@ -1,4 +1,4 @@
-﻿import { Flight, HoleConfig, ScoreType } from '../types/golf';
+import { Flight, HoleConfig, ScoreType } from '../types/golf';
 import { SCORE_VALUES } from './zeroSumEngine';
 
 export interface BulletStatus {
@@ -13,6 +13,7 @@ export interface BulletStatus {
   bulletsInitial: number;
   bulletsRemaining: number;
   bulletsSpent: number;
+  extraBufferStrokes: number;
   riskStatus: 'SAFE' | 'CAUTION' | 'CRITICAL_DQ_RISK' | 'DISQUALIFIED';
   statusColor: string;
   statusBadge: string;
@@ -66,7 +67,9 @@ export function calculateBulletStatus(
   const projectedFinishOverPar = currentGrossOverPar + expectedRemainingOverPar;
 
   const rawBullets = projectedFinishOverPar - (handicap - 4);
-  const bulletsRemaining = Math.max(0, Math.min(4, Math.round(rawBullets)));
+  const totalCushion = Math.max(0, Math.round(rawBullets));
+  const bulletsRemaining = Math.max(0, Math.min(4, totalCushion));
+  const extraBufferStrokes = Math.max(0, totalCushion - 4);
   const bulletsSpent = Math.max(0, 4 - bulletsRemaining);
 
   const currentNetToPar = currentGrossOverPar - Math.round((holesPlayed / 18) * handicap);
@@ -103,6 +106,12 @@ export function calculateBulletStatus(
       statusBadge = 'ระวัง (เหลือกระสุน 1 นัด)';
       warningMessage = 'กระสุนเหลือเพียง 1 นัด! ถ้าคู่แข่งหลุดโบกี้หรือดับเบิ้ลแล้ว ควรเคาะโบกี้เพื่อเซฟกระสุนไว้';
       safeScoreTargetRemainingHoles = 'เซฟโบกี้เมื่อเป็นไปได้ หลีกเลี่ยงพาร์ที่ไม่จำเป็น';
+    } else if (extraBufferStrokes > 0) {
+      riskStatus = 'SAFE';
+      statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
+      statusBadge = `ปลอดภัยสูง (4+${extraBufferStrokes} สโตรกสะสม)`;
+      warningMessage = `มีโควตากระสุนเต็ม 4 นัด และมีสโตรกสำรองพิเศษสะสมอีก +${extraBufferStrokes} สโตรก เปิดเกมบุกได้อย่างมั่นใจ`;
+      safeScoreTargetRemainingHoles = 'เล่นตามเกมธรรมชาติ';
     } else {
       riskStatus = 'SAFE';
       statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
@@ -124,6 +133,7 @@ export function calculateBulletStatus(
     bulletsInitial: 4,
     bulletsRemaining,
     bulletsSpent,
+    extraBufferStrokes,
     riskStatus,
     statusColor,
     statusBadge,

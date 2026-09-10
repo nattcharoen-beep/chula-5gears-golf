@@ -92,6 +92,9 @@ export function evaluatePuttingDecision(
   }
 
   // Calculate exact Zero-sum integer points for each discrete outcome
+  const scoresIfEagle = { ...oppScoresLikely, chula: 'eagle' as ScoreType };
+  const pointsIfEagle = calculateHoleZeroSumPoints(scoresIfEagle).chula; // Integer -4 to +4
+
   const scoresIfBirdie = { ...oppScoresLikely, chula: 'birdie' as ScoreType };
   const pointsIfBirdie = calculateHoleZeroSumPoints(scoresIfBirdie).chula; // Integer -4 to +4
 
@@ -126,16 +129,30 @@ export function evaluatePuttingDecision(
   const tacticalReasons: string[] = [];
 
   // =========================================================================
-  // SCENARIO 1: HUNT BIRDIE (ลุยเบอร์ดี้เต็มตัว!)
-  // เกิดขึ้นเมื่อ:
-  // 1) ผู้เล่นเลือกพัตต์ลุ้นเบอร์ดี้
-  // 2) หรือ คู่แข่งทำเบอร์ดี้ไปแล้ว และการออกพาร์แต้มติดลบ/แพ้ ขณะที่เบอร์ดี้ให้แต้มบวก/ชนะ
+  // SCENARIO 0: HUNT EAGLE (ลุยอีเกิ้ลเต็มตัว! เมื่อเลือกช็อตลุ้นอีเกิ้ล)
   // =========================================================================
-  const shouldHuntBirdie =
-    chulaTargetScore === 'birdie' ||
-    (birdieOpponents.length > 0 && pointsIfBirdie > pointsIfPar);
-
-  if (shouldHuntBirdie && (isFlightA || bulletStatus !== 'CRITICAL_DQ_RISK')) {
+  if (chulaTargetScore === 'eagle') {
+    verdict = 'HUNT_EAGLE';
+    pointSwing = pointsIfEagle - pointsIfBirdie;
+    badgeBg = 'bg-amber-500 text-black border-amber-300 font-black';
+    verdictBadge = 'ลุยอีเกิ้ลเต็มตัว';
+    verdictTitle = `🦅 ลุยอีเกิ้ลเต็มตัว! (โอกาสคว้าแต้มสูงสุด +${pointsIfEagle} แต้ม)`;
+    primaryAdvice = `โอกาสทองพัตต์ทำอีเกิ้ล! หากพัตต์ลงจะคว้าแต้มขาดถึง +${pointsIfEagle} แต้ม นำโด่งรอบวง ${
+      isFlightA ? 'ในไฟลท์ A เล่นสแครตช์บุกได้ 100% ไร้กฎ DQ' : 'โควตากระสุนปลอดภัย สู้ได้เต็มที่'
+    }`;
+    tacticalReasons.push(
+      `พัตต์อีเกิ้ลลงการันตีแต้มสูงสุด +${pointsIfEagle} แต้ม ชนะรอบวงแบบเด็ดขาด`,
+      `หากพลาดเก็บเบอร์ดี้ยังคงได้แต้มสูง (${pointsIfBirdie > 0 ? '+' : ''}${pointsIfBirdie} แต้ม)`,
+      isFlightA
+        ? 'ไฟลท์ A (สแครตช์): เล่นเหมือนไม่มีแคป บุกอีเกิ้ลได้เต็มเหนี่ยว'
+        : 'สถานะกระสุนปลอดภัย สามารถเปิดเกมบุกแลกแต้มได้'
+    );
+  }
+  // =========================================================================
+  // SCENARIO 1: HUNT BIRDIE (ลุยเบอร์ดี้เต็มตัว!)
+  // เกิดขึ้นเมื่อ: ผู้เล่นเลือกพัตต์ลุ้นเบอร์ดี้โดยเฉพาะ
+  // =========================================================================
+  else if (chulaTargetScore === 'birdie') {
     verdict = 'HUNT_BIRDIE';
     pointSwing = pointsIfBirdie - pointsIfPar; // Swing ระหว่างเบอร์ดี้กับพาร์
     badgeBg = 'bg-red-600 text-white border-red-400';
@@ -184,7 +201,22 @@ export function evaluatePuttingDecision(
     }
   }
   // =========================================================================
-  // SCENARIO 2: DUMP HANDICAP (ทิ้งแคปออกดับเบิ้ลเลย!)
+  // SCENARIO 2: DEFEND DOUBLE / BOGEY TARGET (เมื่อผู้เล่นเลือกลุ้นโบกี้)
+  // =========================================================================
+  else if (chulaTargetScore === 'bogey') {
+    pointSwing = pointsIfBogey - pointsIfDouble;
+    verdict = 'DEFEND_DOUBLE';
+    verdictBadge = 'เซฟโบกี้ชัวร์';
+    badgeBg = 'bg-slate-700 text-white border-slate-500';
+    verdictTitle = '🛡️ เคาะเอาโบกี้ชัวร์ (ระวังอย่าให้หลุดดับเบิ้ล)';
+    primaryAdvice = `ช็อตนี้เป็นพัตต์ลุ้นโบกี้ แนะนำคุมน้ำหนักพัตต์เก็บโบกี้ชัวร์ (${pointsIfBogey > 0 ? '+' : ''}${pointsIfBogey} แต้ม) ระวังอย่าให้หลุด 3 พัตต์ออกดับเบิ้ล (${pointsIfDouble} แต้ม) ซึ่งจะทำให้เสียแต้ม Match Play เพิ่มอีก ${pointSwing} แต้ม!`;
+    tacticalReasons.push(
+      `แต้มโบกี้: ${pointsIfBogey > 0 ? '+' : ''}${pointsIfBogey} แต้ม vs ดับเบิ้ล: ${pointsIfDouble} แต้ม (Swing ${pointSwing} แต้ม)`,
+      'เน้นแตะน้ำหนักให้ลูกหยุดข้างปากหลุมเพื่อเก็บแท็ปอินโบกี้ ป้องกันแต้มหลุด'
+    );
+  }
+  // =========================================================================
+  // SCENARIO 3: DUMP HANDICAP (ทิ้งแคปออกดับเบิ้ลเลย!)
   // เฉพาะ Flight B, C, D เท่านั้น! (Flight A ไม่มีแคปให้ทิ้ง)
   // =========================================================================
   else if (
@@ -205,7 +237,7 @@ export function evaluatePuttingDecision(
     );
   }
   // =========================================================================
-  // SCENARIO 2B: กรณีแต้มเท่ากันทุกสกอร์ใน Flight A (ไม่เรียกว่าทิ้งแคป)
+  // SCENARIO 3B: กรณีแต้มเท่ากันทุกสกอร์ใน Flight A (ไม่เรียกว่าทิ้งแคป)
   // =========================================================================
   else if (
     isFlightA &&
@@ -224,7 +256,7 @@ export function evaluatePuttingDecision(
     );
   }
   // =========================================================================
-  // SCENARIO 3: เคาะโบกี้กินรอบวง (พาร์กับโบกี้ได้แต้มบวกเท่ากัน เช่น +4 หรือ +2)
+  // SCENARIO 4: เคาะโบกี้กินรอบวง (พาร์กับโบกี้ได้แต้มบวกเท่ากัน เช่น +4 หรือ +2)
   // =========================================================================
   else if (pointSwing === 0 && pointsIfBogey > 0) {
     verdict = 'DUMP_BULLET';
@@ -251,7 +283,7 @@ export function evaluatePuttingDecision(
     }
   }
   // =========================================================================
-  // SCENARIO 4: CRITICAL DQ RISK (Flight B, C, D เท่านั้น เมื่อกระสุนหมด 0 นัด)
+  // SCENARIO 5: CRITICAL DQ RISK (Flight B, C, D เท่านั้น เมื่อกระสุนหมด 0 นัด)
   // =========================================================================
   else if (!isFlightA && bulletStatus === 'CRITICAL_DQ_RISK') {
     if (pointsIfDouble === pointsIfBogey) {
@@ -281,7 +313,7 @@ export function evaluatePuttingDecision(
     }
   }
   // =========================================================================
-  // SCENARIO 5: DOWNHILL 3-PUTT RISK (ระวังหลุด 3 พัตต์ออกดับเบิ้ล)
+  // SCENARIO 6: DOWNHILL 3-PUTT RISK (ระวังหลุด 3 พัตต์ออกดับเบิ้ล)
   // =========================================================================
   else if (
     chulaPuttDifficulty === 'difficult_downhill' &&
@@ -302,7 +334,7 @@ export function evaluatePuttingDecision(
     );
   }
   // =========================================================================
-  // SCENARIO 6: STANDARD ATTACK PAR (สู้พาร์เต็มตัว)
+  // SCENARIO 7: STANDARD ATTACK PAR (สู้พาร์เต็มตัว เมื่อเลือกช็อตลุ้นพาร์)
   // =========================================================================
   else {
     verdict = 'ATTACK_PAR';
@@ -311,9 +343,15 @@ export function evaluatePuttingDecision(
     if (isFlightA) {
       verdictTitle = '🔥 สู้พาร์เต็มตัว! (Point Swing สูง ลุยสแครตช์เต็มที่)';
       verdictBadge = 'สู้พาร์สแครตช์';
-      primaryAdvice = `พัตต์พาร์ลงจะคว้า ${
-        pointsIfPar > 0 ? '+' : ''
-      }${pointsIfPar} แต้ม แต่ถ้ายอมโบกี้แต้มจะหล่นไปที่ ${pointsIfBogey} แต้ม ส่วนต่างสูงถึง ${pointSwing} แต้มเต็ม! ในไฟลท์ A เล่นสแครตช์เพียวๆ ไม่มีแต้มต่อ ไม่มีกฎ DQ สู้พาร์ได้เต็มกำลัง`;
+      if (birdieOpponents.length > 0) {
+        primaryAdvice = `คู่แข่งหลุมนี้ออกเบอร์ดี้ไปแล้ว (${birdieOpponents.join(
+          ', '
+        )}) หากเราเก็บพาร์ได้แต้มจะอยู่ที่ ${pointsIfPar} แต้ม แต่ถ้าพลาดโบกี้แต้มจะรูดไปถึง ${pointsIfBogey} แต้ม! ต้องสู้พาร์เต็มตัวเพื่อหยุดแต้มไหล (💡 หากช็อตนี้ของจุฬาฯ มีโอกาสลุ้นเบอร์ดี้ ให้แตะปุ่ม [🔴 ลุ้นเบอร์ดี้] ด้านบนเพื่อลุยแต้มบวก +${pointsIfBirdie} แต้ม!)`;
+      } else {
+        primaryAdvice = `พัตต์พาร์ลงจะคว้า ${
+          pointsIfPar > 0 ? '+' : ''
+        }${pointsIfPar} แต้ม แต่ถ้ายอมโบกี้แต้มจะหล่นไปที่ ${pointsIfBogey} แต้ม ส่วนต่างสูงถึง ${pointSwing} แต้มเต็ม! ในไฟลท์ A เล่นสแครตช์เพียวๆ ไม่มีแต้มต่อ ไม่มีกฎ DQ สู้พาร์ได้เต็มกำลัง`;
+      }
       tacticalReasons.push(
         `Point Swing ในหลุมนี้สูงถึง ${pointSwing} แต้มเต็ม (ส่วนต่างระหว่างพาร์กับโบกี้)`,
         'ไฟลท์ A (สแครตช์): เล่น Gross สด ไม่มีแคป ไม่โดนกฎ DQ สู้ได้อย่างมั่นใจ 100%',
@@ -324,9 +362,15 @@ export function evaluatePuttingDecision(
     } else {
       verdictTitle = '🔥 สู้พาร์เต็มตัว! (Point Swing สูง คุ้มค่าแลกกระสุน)';
       verdictBadge = 'สู้พาร์เต็มตัว';
-      primaryAdvice = `คู่แข่งด้านหลังมีโอกาสทำแต้มดี การยอมโบกี้จะทำให้แต้มหล่นไปที่ ${pointsIfBogey} แต้ม แต่ถ้าพัตต์พาร์ลงจะคว้า ${
-        pointsIfPar > 0 ? '+' : ''
-      }${pointsIfPar} แต้ม ส่วนต่างสูงถึง ${pointSwing} แต้มเต็ม! คุ้มค่ามากที่จะสู้`;
+      if (birdieOpponents.length > 0) {
+        primaryAdvice = `คู่แข่งหลุมนี้ออกเบอร์ดี้ไปแล้ว (${birdieOpponents.join(
+          ', '
+        )}) หากเราเก็บพาร์ได้แต้มจะอยู่ที่ ${pointsIfPar} แต้ม แต่ถ้าพลาดโบกี้แต้มจะรูดไปถึง ${pointsIfBogey} แต้ม! ต้องสู้พาร์เต็มตัวเพื่อหยุดแต้มไหล (💡 หากช็อตนี้ของจุฬาฯ มีโอกาสลุ้นเบอร์ดี้ ให้แตะปุ่ม [🔴 ลุ้นเบอร์ดี้] ด้านบนเพื่อลุยแต้มบวก +${pointsIfBirdie} แต้ม!)`;
+      } else {
+        primaryAdvice = `คู่แข่งด้านหลังมีโอกาสทำแต้มดี การยอมโบกี้จะทำให้แต้มหล่นไปที่ ${pointsIfBogey} แต้ม แต่ถ้าพัตต์พาร์ลงจะคว้า ${
+          pointsIfPar > 0 ? '+' : ''
+        }${pointsIfPar} แต้ม ส่วนต่างสูงถึง ${pointSwing} แต้มเต็ม! คุ้มค่ามากที่จะสู้`;
+      }
       tacticalReasons.push(
         `Point Swing ในหลุมนี้สูงถึง ${pointSwing} แต้มเต็ม (ส่วนต่างระหว่างพาร์กับโบกี้)`,
         `สถานะกระสุนเหลือ ${intBullets} นัด ปลอดภัย คุ้มค่ามากที่จะใช้กระสุน 1 นัดเพื่อแลกกับแต้มในหลุมนี้`,
@@ -344,6 +388,7 @@ export function evaluatePuttingDecision(
     scenarioBreakdown.push({
       scenario: 'คู่แข่งทั้ง 4 คนจบหลุมแล้ว (ทราบผลแน่นอน 100%)',
       probabilityPct: 100,
+      chulaEaglePoints: pointsIfEagle,
       chulaBirdiePoints: pointsIfBirdie,
       chulaParPoints: pointsIfPar,
       chulaBogeyPoints: pointsIfBogey,
@@ -354,6 +399,7 @@ export function evaluatePuttingDecision(
     scenarioBreakdown.push({
       scenario: 'กรณี 1: คู่แข่งตีตามการประเมินสด (Most Likely)',
       probabilityPct: 60,
+      chulaEaglePoints: pointsIfEagle,
       chulaBirdiePoints: pointsIfBirdie,
       chulaParPoints: pointsIfPar,
       chulaBogeyPoints: pointsIfBogey,
@@ -361,29 +407,47 @@ export function evaluatePuttingDecision(
     });
 
     // Scenario 2: Opponents Best
+    const bestEaglePts = calculateHoleZeroSumPoints({ ...oppScoresBest, chula: 'eagle' }).chula;
     const bestBirdiePts = calculateHoleZeroSumPoints({ ...oppScoresBest, chula: 'birdie' }).chula;
     const bestParPts = calculateHoleZeroSumPoints({ ...oppScoresBest, chula: 'par' }).chula;
     const bestBogeyPts = calculateHoleZeroSumPoints({ ...oppScoresBest, chula: 'bogey' }).chula;
+    const bestDoublePts = calculateHoleZeroSumPoints({ ...oppScoresBest, chula: 'double' }).chula;
+
+    let swingScenario2 = bestParPts - bestBogeyPts;
+    if (verdict === 'HUNT_EAGLE') swingScenario2 = bestEaglePts - bestBirdiePts;
+    else if (verdict === 'HUNT_BIRDIE') swingScenario2 = bestBirdiePts - bestParPts;
+    else if (chulaTargetScore === 'bogey') swingScenario2 = bestBogeyPts - bestDoublePts;
+
     scenarioBreakdown.push({
       scenario: 'กรณี 2: คู่แข่งด้านหลังพัตต์ลงตามเป้าทุกคน (Opponents Best)',
       probabilityPct: 20,
+      chulaEaglePoints: bestEaglePts,
       chulaBirdiePoints: bestBirdiePts,
       chulaParPoints: bestParPts,
       chulaBogeyPoints: bestBogeyPts,
-      netSwing: bestParPts - bestBogeyPts,
+      netSwing: swingScenario2,
     });
 
     // Scenario 3: Opponents Miss
+    const missEaglePts = calculateHoleZeroSumPoints({ ...oppScoresMiss, chula: 'eagle' }).chula;
     const missBirdiePts = calculateHoleZeroSumPoints({ ...oppScoresMiss, chula: 'birdie' }).chula;
     const missParPts = calculateHoleZeroSumPoints({ ...oppScoresMiss, chula: 'par' }).chula;
     const missBogeyPts = calculateHoleZeroSumPoints({ ...oppScoresMiss, chula: 'bogey' }).chula;
+    const missDoublePts = calculateHoleZeroSumPoints({ ...oppScoresMiss, chula: 'double' }).chula;
+
+    let swingScenario3 = missParPts - missBogeyPts;
+    if (verdict === 'HUNT_EAGLE') swingScenario3 = missEaglePts - missBirdiePts;
+    else if (verdict === 'HUNT_BIRDIE') swingScenario3 = missBirdiePts - missParPts;
+    else if (chulaTargetScore === 'bogey') swingScenario3 = missBogeyPts - missDoublePts;
+
     scenarioBreakdown.push({
       scenario: 'กรณี 3: คู่แข่งด้านหลังพลาดทุกลูก (+1 สโตรก) (Opponents Miss)',
       probabilityPct: 20,
+      chulaEaglePoints: missEaglePts,
       chulaBirdiePoints: missBirdiePts,
       chulaParPoints: missParPts,
       chulaBogeyPoints: missBogeyPts,
-      netSwing: missParPts - missBogeyPts,
+      netSwing: swingScenario3,
     });
   }
 
@@ -394,6 +458,7 @@ export function evaluatePuttingDecision(
     badgeBg,
     primaryAdvice,
     pointSwing,
+    expectedPointsIfEagle: pointsIfEagle,
     expectedPointsIfBirdie: pointsIfBirdie,
     expectedPointsIfPar: pointsIfPar,
     expectedPointsIfBogey: pointsIfBogey,

@@ -189,7 +189,9 @@ export const ScorecardTable: React.FC<ScorecardTableProps> = ({
                           }
                           style={{ colorScheme: 'dark' }}
                           className={`w-full py-1 text-center rounded text-[11px] font-black focus:outline-none transition border cursor-pointer ${
-                            sc === 'birdie'
+                            sc === 'eagle'
+                              ? 'bg-purple-950 text-amber-300 border-amber-500/70'
+                              : sc === 'birdie'
                               ? 'bg-red-950 text-red-300 border-red-500/70'
                               : sc === 'par'
                               ? 'bg-emerald-950 text-emerald-300 border-emerald-500/70'
@@ -201,6 +203,7 @@ export const ScorecardTable: React.FC<ScorecardTableProps> = ({
                           }`}
                         >
                           <option value="" className="bg-slate-900 text-slate-400">-</option>
+                          <option value="eagle" className="bg-slate-900 text-amber-400 font-bold">อีเกิ้ล (-2)</option>
                           <option value="birdie" className="bg-slate-900 text-red-400 font-bold">ดี้ (-1)</option>
                           <option value="par" className="bg-slate-900 text-emerald-400 font-bold">พาร์ (E)</option>
                           <option value="bogey" className="bg-slate-900 text-white font-bold">กี้ (+1)</option>

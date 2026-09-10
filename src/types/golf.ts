@@ -139,6 +139,7 @@ export interface OpponentLiveState {
 
 export interface GameTheoryDecisionResult {
   verdict:
+    | 'HUNT_EAGLE'
     | 'HUNT_BIRDIE'
     | 'ATTACK_PAR'
     | 'SAFE_BOGEY'
@@ -150,6 +151,7 @@ export interface GameTheoryDecisionResult {
   badgeBg: string;
   primaryAdvice: string;
   pointSwing: number; // ผลต่างแต้มระหว่างช็อตบุกกับช็อตเซฟ
+  expectedPointsIfEagle?: number;
   expectedPointsIfBirdie: number;
   expectedPointsIfPar: number;
   expectedPointsIfBogey: number;
@@ -162,6 +164,7 @@ export interface GameTheoryDecisionResult {
   scenarioBreakdown: {
     scenario: string;
     probabilityPct: number;
+    chulaEaglePoints?: number;
     chulaBirdiePoints?: number;
     chulaParPoints: number;
     chulaBogeyPoints: number;

@@ -179,11 +179,17 @@ export const App: React.FC = () => {
   ) => {
     const hIdx = holeNumber - 1;
 
+    let nextIsFinished = false;
+    let nextFinishedScore: ScoreType = 'par';
+
     setOpponentsByHole((prev) => {
       const currentList = prev[holeNumber] || createDefaultOpponentsForHole(hIdx, scores);
       const updatedList = currentList.map((item) => {
         if (item.universityId === uId) {
-          return { ...item, ...patch };
+          const updated = { ...item, ...patch };
+          nextIsFinished = updated.isFinished;
+          nextFinishedScore = updated.finishedScore;
+          return updated;
         }
         return item;
       });
@@ -196,12 +202,8 @@ export const App: React.FC = () => {
     // If finished status or finished score changed, synchronize scores array
     if ('isFinished' in patch || 'finishedScore' in patch) {
       setScores((prevScores) => {
-        const currentOpp = (opponentsByHole[holeNumber] || []).find((o) => o.universityId === uId);
-        const isFinished = patch.isFinished !== undefined ? patch.isFinished : (currentOpp?.isFinished ?? false);
-        const finishedScore = patch.finishedScore !== undefined ? patch.finishedScore : (currentOpp?.finishedScore ?? 'bogey');
-
         const updatedUniv = [...prevScores[uId]];
-        updatedUniv[hIdx] = isFinished ? finishedScore : null;
+        updatedUniv[hIdx] = nextIsFinished ? nextFinishedScore : null;
         return {
           ...prevScores,
           [uId]: updatedUniv,

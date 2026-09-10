@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React, { useState } from 'react';
 import { Flight, HoleConfig, ScoreType, UniversityId, UNIVERSITIES } from '../types/golf';
 import { calculateHoleZeroSumPoints, calculateUniversityTournamentPoints } from '../utils/zeroSumEngine';
 import { Trophy, AlertOctagon } from 'lucide-react';
@@ -17,6 +17,14 @@ export const GroupStandings: React.FC<GroupStandingsProps> = ({
   handicap,
 }) => {
   const universities = Object.keys(UNIVERSITIES) as UniversityId[];
+
+  const [manualDq, setManualDq] = useState<Record<UniversityId, boolean>>({
+    chula: false,
+    kasetsart: false,
+    cmu: false,
+    kku: false,
+    psu: false,
+  });
 
   const totalZeroSum: Record<UniversityId, number> = {
     chula: 0,
@@ -62,15 +70,21 @@ export const GroupStandings: React.FC<GroupStandingsProps> = ({
 
   const coursePar = holes.reduce((acc, h) => acc + h.par, 0);
   const chulaNet = totalGross.chula - handicap;
-  const isChulaDq =
+  const isChulaAutoDq =
     flight !== 'A' &&
     chulaHolesPlayed === 18 &&
     chulaNet < coursePar - 4;
 
+  const isPlayerDq = (u: UniversityId) => {
+    if (manualDq[u]) return true;
+    if (u === 'chula' && isChulaAutoDq) return true;
+    return false;
+  };
+
   const playerSummaries = universities.map((u) => ({
     universityId: u,
     totalZeroSumPoints: totalZeroSum[u],
-    isDq: u === 'chula' ? isChulaDq : false,
+    isDq: isPlayerDq(u),
   }));
 
   const standings = calculateUniversityTournamentPoints(playerSummaries);
@@ -88,7 +102,7 @@ export const GroupStandings: React.FC<GroupStandingsProps> = ({
             ตารางสรุปคะแนนก๊วน & แต้มสะสมเข้าสถาบัน (5, 4, 3, 2, 1 แต้ม)
           </h3>
           <p className="text-xs text-slate-400">
-            สถาบันที่ได้แต้มรวมสูงสุดในก๊วนได้ 5 แต้ม เสมอหารเฉลี่ย • DQ ได้ 0 แต้ม
+            สถาบันที่ได้แต้มรวมสูงสุดในก๊วนได้ 5 แต้ม เสมอหารเฉลี่ย • DQ ได้ 0 แต้ม (สามารถกดแจ้ง DQ ตามคำสั่งกรรมการได้)
           </p>
         </div>
 
@@ -102,7 +116,7 @@ export const GroupStandings: React.FC<GroupStandingsProps> = ({
           const uInfo = UNIVERSITIES[u];
           const st = standings[u];
           const isChula = u === 'chula';
-          const isDq = isChula && isChulaDq;
+          const isDq = isPlayerDq(u);
 
           return (
             <div
@@ -118,7 +132,9 @@ export const GroupStandings: React.FC<GroupStandingsProps> = ({
               <div className="flex items-center justify-between mb-2">
                 <span
                   className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                    st.rank === 1
+                    isDq
+                      ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+                      : st.rank === 1
                       ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                       : st.rank === 2
                       ? 'bg-slate-300/20 text-slate-300'
@@ -128,7 +144,23 @@ export const GroupStandings: React.FC<GroupStandingsProps> = ({
                   {isDq ? 'DQ' : `อันดับ ${st.rankDisplay}`}
                 </span>
 
-                <span className="text-lg">{uInfo.flagEmoji}</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setManualDq((prev) => ({ ...prev, [u]: !prev[u] }))
+                    }
+                    title="สลับสถานะตัดสิทธิ์ (DQ) โดยกรรมการ"
+                    className={`text-[10px] px-1.5 py-0.5 rounded border font-bold transition active:scale-95 ${
+                      manualDq[u]
+                        ? 'bg-red-600 text-white border-red-400 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-300 border-slate-800 hover:border-slate-700 bg-slate-900'
+                    }`}
+                  >
+                    {manualDq[u] ? 'กรรมการ DQ' : 'แจ้ง DQ'}
+                  </button>
+                  <span className="text-lg">{uInfo.flagEmoji}</span>
+                </div>
               </div>
 
               <div className="mb-3">
@@ -172,7 +204,9 @@ export const GroupStandings: React.FC<GroupStandingsProps> = ({
               {isDq && (
                 <div className="mt-2 text-[10px] text-red-400 bg-red-900/30 p-1.5 rounded border border-red-800/40 flex items-center gap-1">
                   <AlertOctagon className="w-3 h-3 text-red-400 shrink-0" />
-                  Net &lt; -4 Under Par ปรับเป็น 0 แต้ม!
+                  {isChula && isChulaAutoDq
+                    ? 'Net < -4 Under Par ปรับเป็น 0 แต้ม!'
+                    : 'กรรมการปรับผลแข่งขัน (DQ 0 แต้ม)'}
                 </div>
               )}
             </div>
