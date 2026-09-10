@@ -6,6 +6,7 @@ import { ScorecardTable } from './components/ScorecardTable';
 import { GroupStandings } from './components/GroupStandings';
 import { BulletDashboard } from './components/BulletDashboard';
 import { calculateBulletStatus, DEFAULT_18_HOLES } from './utils/bulletManager';
+import { HandicapModal } from './components/HandicapModal';
 import { Target, Table, Trophy, Shield } from 'lucide-react';
 
 const STORAGE_KEY = 'chula_5gears_golf_state_v3';
@@ -78,6 +79,16 @@ export const App: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'hole' | 'scorecard' | 'standings' | 'bullets'>('hole');
   const [holes] = useState<HoleConfig[]>(DEFAULT_18_HOLES);
+
+  const [showHcpModal, setShowHcpModal] = useState<boolean>(() => {
+    return !localStorage.getItem('chula_5gears_hcp_confirmed_v1');
+  });
+
+  const handleConfirmHcp = (newHcp: number, newFlight: Flight) => {
+    setHandicap(newHcp);
+    setFlight(newFlight);
+    localStorage.setItem('chula_5gears_hcp_confirmed_v1', 'true');
+  };
 
   const [scores, setScores] = useState<Record<UniversityId, (ScoreType | null)[]>>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -231,11 +242,19 @@ export const App: React.FC = () => {
         currentHole={currentHole}
         onSelectHole={setCurrentHole}
         flight={flight}
-        onSelectFlight={setFlight}
         handicap={handicap}
-        onChangeHandicap={setHandicap}
+        onOpenHcpModal={() => setShowHcpModal(true)}
         bulletStatus={bulletStatus}
         onResetRound={handleResetRound}
+      />
+
+      {/* Mobile-First Big Handicap Setup Modal */}
+      <HandicapModal
+        isOpen={showHcpModal}
+        onClose={() => setShowHcpModal(false)}
+        currentHcp={handicap}
+        onSelectHcp={handleConfirmHcp}
+        canClose={true}
       />
 
       {/* Main Content Area: Persistent tabs with zero unmounting */}
