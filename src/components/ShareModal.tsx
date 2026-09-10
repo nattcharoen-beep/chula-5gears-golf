@@ -54,39 +54,40 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
       role="dialog"
       aria-modal="true"
       aria-label="QR Code แชร์แอปให้เพื่อน"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-sm p-3 flex items-center justify-center min-h-screen"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-sm bg-slate-900 border border-pink-500/50 rounded-3xl p-5 shadow-2xl shadow-pink-950/50 space-y-4 text-center"
+        className="relative w-full max-w-xs sm:max-w-sm bg-slate-900 border border-pink-500/60 rounded-3xl p-4 sm:p-5 shadow-2xl shadow-pink-950/60 text-center my-auto max-h-[92vh] overflow-y-auto space-y-3"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition"
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition active:scale-95"
+          title="ปิด"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Title */}
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/20 text-pink-300 text-xs font-bold border border-pink-500/30">
+        <div className="space-y-0.5 pt-1">
+          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 text-[11px] font-bold border border-pink-500/30">
             <span>⚙️ Chula 5-Gears</span>
           </div>
-          <h3 className="text-lg font-black text-white">สแกน QR เพื่อเปิดแอป</h3>
-          <p className="text-xs text-slate-400">
+          <h3 className="text-base sm:text-lg font-black text-white">สแกน QR เพื่อเปิดแอป</h3>
+          <p className="text-[11px] text-slate-400">
             เปิดกล้องมือถือส่องเพื่อเปิดใช้งานบนเครื่องตัวเองได้ทันที
           </p>
         </div>
 
-        {/* QR Code Container */}
-        <div className="flex justify-center py-2">
-          <div className="p-4 bg-white rounded-2xl shadow-xl ring-4 ring-pink-500/30">
+        {/* QR Code Container (Responsive & Fully Visible) */}
+        <div className="flex justify-center py-1">
+          <div className="p-3 bg-white rounded-2xl shadow-xl ring-4 ring-pink-500/30 inline-block">
             <QRCodeSVG
               value={APP_URL}
-              size={200}
+              size={160}
               level="H"
               includeMargin={false}
             />
@@ -94,14 +95,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="space-y-2 pt-1">
+        <div className="space-y-1.5 pt-0.5">
           {typeof navigator !== 'undefined' && 'share' in navigator && (
             <button
               type="button"
               onClick={handleNativeShare}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white text-xs font-bold transition shadow-lg shadow-pink-900/30 flex items-center justify-center gap-2 active:scale-95"
+              className="w-full py-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white text-xs font-bold transition shadow-lg shadow-pink-900/30 flex items-center justify-center gap-1.5 active:scale-95"
             >
-              <Share2 className="w-4 h-4" />
+              <Share2 className="w-3.5 h-3.5" />
               <span>แชร์เข้า LINE / กลุ่มเพื่อน</span>
             </button>
           )}
@@ -109,7 +110,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
           <button
             type="button"
             onClick={handleCopy}
-            className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 active:scale-95 border ${
+            className={`w-full py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 border ${
               copied
                 ? 'bg-emerald-600 text-white border-emerald-500'
                 : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
@@ -117,12 +118,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
           >
             {copied ? (
               <>
-                <Check className="w-4 h-4 text-white" />
+                <Check className="w-3.5 h-3.5 text-white" />
                 <span>คัดลอกลิงก์สำเร็จแล้ว!</span>
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4 text-pink-400" />
+                <Copy className="w-3.5 h-3.5 text-pink-400" />
                 <span>คัดลอกลิงก์ (Copy Link)</span>
               </>
             )}
@@ -130,8 +131,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Quick Tip */}
-        <div className="text-[11px] text-slate-400 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-          💡 <span className="text-pink-300 font-semibold">ทริก:</span> เมื่อเปิดในมือถือแล้ว กดเลือก <span className="text-white font-bold">"เพิ่มไปยังหน้าจอโฮม (Add to Home Screen)"</span> เพื่อใช้เต็มจอเหมือนแอปจริงได้เลย
+        <div className="text-[10px] sm:text-[11px] text-slate-400 bg-slate-950 p-2 rounded-xl border border-slate-800 leading-relaxed">
+          💡 <span className="text-pink-300 font-semibold">ทริก:</span> สแกนแล้วกดเลือก <span className="text-white font-bold">"เพิ่มไปยังหน้าจอโฮม"</span> เพื่อใช้เต็มจอเหมือนแอปจริงได้เลย
         </div>
       </div>
     </div>
