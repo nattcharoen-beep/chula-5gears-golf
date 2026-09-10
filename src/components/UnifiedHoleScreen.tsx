@@ -9,6 +9,7 @@ import {
 } from '../types/golf';
 import { evaluatePuttingDecision } from '../utils/gameTheoryEngine';
 import { BulletStatus } from '../utils/bulletManager';
+import { isOverDouble, OVER_DOUBLE_OPTIONS, SCORE_LABELS, SCORE_VALUES } from '../utils/zeroSumEngine';
 import {
   ChevronLeft,
   ChevronRight,
@@ -55,10 +56,28 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
     'easy_tap_in' | 'medium_6_10ft' | 'difficult_downhill'
   >('medium_6_10ft');
 
+  // Open over-double score picker drawers
+  const [openOverDoubleOpp, setOpenOverDoubleOpp] = useState<Record<UniversityId, boolean>>({
+    chula: false,
+    kasetsart: false,
+    cmu: false,
+    kku: false,
+    psu: false,
+  });
+  const [openOverDoubleChula, setOpenOverDoubleChula] = useState<boolean>(false);
+
   // Reset Chula's putt target & difficulty on hole navigation so state from previous hole does not bleed over
   useEffect(() => {
     setChulaTargetScore('par');
     setChulaPuttDifficulty('medium_6_10ft');
+    setOpenOverDoubleChula(false);
+    setOpenOverDoubleOpp({
+      chula: false,
+      kasetsart: false,
+      cmu: false,
+      kku: false,
+      psu: false,
+    });
   }, [currentHole]);
 
   const [showMatrix, setShowMatrix] = useState<boolean>(false);
@@ -84,7 +103,8 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
     { shotNum: par - 1, target: 'birdie', label: `ช็อต ${par - 1}`, scoreName: 'ดี้ (-1)' },
     { shotNum: par, target: 'par', label: `ช็อต ${par}`, scoreName: 'พาร์ (E)' },
     { shotNum: par + 1, target: 'bogey', label: `ช็อต ${par + 1}`, scoreName: 'กี้ (+1)' },
-    { shotNum: par + 2, target: 'double', label: `ช็อต ${par + 2}+`, scoreName: 'ดับ (+2)' },
+    { shotNum: par + 2, target: 'double', label: `ช็อต ${par + 2}`, scoreName: 'ดับ (+2)' },
+    { shotNum: par + 3, target: 'triple', label: `ช็อต ${par + 3}+`, scoreName: 'เกินดับ (+3+)' },
   ];
 
   return (
@@ -176,29 +196,91 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
 
                 {opp.isFinished ? (
                   /* Option A: จบแล้ว */
-                  <div className="grid grid-cols-5 gap-1">
-                    {(['eagle', 'birdie', 'par', 'bogey', 'double'] as ScoreType[]).map((sc) => (
-                      <button
-                        key={sc}
-                        type="button"
-                        onClick={() => onUpdateOpponent(currentHole, opp.universityId, { finishedScore: sc })}
-                        className={`py-2 rounded-lg text-xs font-black transition active:scale-95 ${
-                          opp.finishedScore === sc
-                            ? sc === 'eagle'
-                              ? 'bg-amber-500 text-slate-950 shadow-md ring-1 ring-white'
-                              : sc === 'birdie'
-                              ? 'bg-red-600 text-white shadow-md ring-1 ring-white'
-                              : sc === 'par'
-                              ? 'bg-emerald-600 text-white shadow-md ring-1 ring-white'
-                              : sc === 'bogey'
-                              ? 'bg-slate-600 text-white shadow-md ring-1 ring-white'
-                              : 'bg-amber-600 text-white shadow-md ring-1 ring-white'
-                            : 'bg-slate-900 text-slate-400 hover:bg-slate-800 border border-slate-800'
-                        }`}
-                      >
-                        {sc === 'eagle' ? 'อีเกิ้ล (-2)' : sc === 'birdie' ? 'ดี้ (-1)' : sc === 'par' ? 'พาร์ (E)' : sc === 'bogey' ? 'กี้ (+1)' : 'ดับ (+2)'}
-                      </button>
-                    ))}
+                  <div className="space-y-1.5">
+                    <div className="grid grid-cols-5 gap-1">
+                      {(['eagle', 'birdie', 'par', 'bogey', 'double'] as ScoreType[]).map((sc) => (
+                        <button
+                          key={sc}
+                          type="button"
+                          onClick={() => {
+                            onUpdateOpponent(currentHole, opp.universityId, { finishedScore: sc });
+                            setOpenOverDoubleOpp((prev) => ({ ...prev, [opp.universityId]: false }));
+                          }}
+                          className={`py-2 rounded-lg text-xs font-black transition active:scale-95 ${
+                            opp.finishedScore === sc
+                              ? sc === 'eagle'
+                                ? 'bg-amber-500 text-slate-950 shadow-md ring-1 ring-white'
+                                : sc === 'birdie'
+                                ? 'bg-red-600 text-white shadow-md ring-1 ring-white'
+                                : sc === 'par'
+                                ? 'bg-emerald-600 text-white shadow-md ring-1 ring-white'
+                                : sc === 'bogey'
+                                ? 'bg-slate-600 text-white shadow-md ring-1 ring-white'
+                                : 'bg-amber-600 text-white shadow-md ring-1 ring-white'
+                              : 'bg-slate-900 text-slate-400 hover:bg-slate-800 border border-slate-800'
+                          }`}
+                        >
+                          {sc === 'eagle' ? 'อีเกิ้ล (-2)' : sc === 'birdie' ? 'ดี้ (-1)' : sc === 'par' ? 'พาร์ (E)' : sc === 'bogey' ? 'กี้ (+1)' : 'ดับ (+2)'}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* ปุ่มระบุสกอร์หากออกเกิน Double */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenOverDoubleOpp((prev) => ({
+                          ...prev,
+                          [opp.universityId]: !prev[opp.universityId],
+                        }))
+                      }
+                      className={`w-full py-1.5 px-2.5 rounded-lg text-xs font-bold transition flex items-center justify-between border active:scale-[0.99] ${
+                        isOverDouble(opp.finishedScore)
+                          ? 'bg-purple-950/90 border-purple-500 text-purple-200 shadow-md ring-1 ring-purple-400'
+                          : 'bg-slate-900/90 text-slate-400 hover:text-slate-200 border-slate-800'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-purple-400 font-black">🟣 เกินดับเบิ้ล</span>
+                        <span className="text-[11px] text-slate-300">
+                          {isOverDouble(opp.finishedScore)
+                            ? `(เลือกแล้ว: ${SCORE_LABELS[opp.finishedScore].th} +${SCORE_VALUES[opp.finishedScore]} / ออก ${par + SCORE_VALUES[opp.finishedScore]} สโตรก)`
+                            : '(กดระบุว่าออกเท่าไหร่: +3, +4, +5...)'}
+                        </span>
+                      </span>
+                      <span className="text-[10px] text-purple-400 font-bold">
+                        {openOverDoubleOpp[opp.universityId] || isOverDouble(opp.finishedScore)
+                          ? '▲ ซ่อน'
+                          : '▼ กดระบุคะแนน'}
+                      </span>
+                    </button>
+
+                    {/* เมนูกดระบุสกอร์ที่เกินดับเบิ้ล */}
+                    {(openOverDoubleOpp[opp.universityId] || isOverDouble(opp.finishedScore)) && (
+                      <div className="grid grid-cols-4 gap-1.5 p-2 bg-slate-950 rounded-xl border border-purple-500/40">
+                        {OVER_DOUBLE_OPTIONS.map((opt) => {
+                          const isSelected = opp.finishedScore === opt.type;
+                          return (
+                            <button
+                              key={opt.type}
+                              type="button"
+                              onClick={() =>
+                                onUpdateOpponent(currentHole, opp.universityId, { finishedScore: opt.type })
+                              }
+                              className={`py-1.5 px-1 rounded-lg text-center transition active:scale-95 flex flex-col items-center justify-center border ${
+                                isSelected
+                                  ? 'bg-purple-600 text-white font-black border-purple-300 shadow-md ring-1 ring-white'
+                                  : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border-slate-800'
+                              }`}
+                            >
+                              <span className="text-xs font-black">+{opt.delta}</span>
+                              <span className="text-[10px] font-bold">{opt.name}</span>
+                              <span className="text-[9px] opacity-75">ออก {par + opt.delta}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   /* Option B: ตีหลังเรา -> เลือกช็อตที่กำลังตี + โอกาสลง */
@@ -211,7 +293,7 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                           {opp.pendingTargetScore.toUpperCase()}
                         </span>
                       </div>
-                      <div className={`grid ${par >= 5 ? 'grid-cols-5' : 'grid-cols-4'} gap-1.5`}>
+                      <div className={`grid ${par >= 5 ? 'grid-cols-6' : 'grid-cols-5'} gap-1`}>
                         {shotOptions.map((opt) => {
                           const isSelected = opp.pendingTargetScore === opt.target;
                           return (
@@ -224,7 +306,7 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                                   currentShotNumber: opt.shotNum,
                                 })
                               }
-                              className={`py-1.5 px-1 rounded-lg text-center transition active:scale-95 flex flex-col items-center justify-center ${
+                              className={`py-1.5 px-0.5 rounded-lg text-center transition active:scale-95 flex flex-col items-center justify-center ${
                                 isSelected
                                   ? opt.target === 'eagle'
                                     ? 'bg-amber-500 text-slate-950 shadow-md ring-1 ring-white'
@@ -234,12 +316,14 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                                     ? 'bg-emerald-600 text-white shadow-md ring-1 ring-white'
                                     : opt.target === 'bogey'
                                     ? 'bg-slate-600 text-white shadow-md ring-1 ring-white'
-                                    : 'bg-amber-600 text-white shadow-md ring-1 ring-white'
+                                    : opt.target === 'double'
+                                    ? 'bg-amber-600 text-white shadow-md ring-1 ring-white'
+                                    : 'bg-purple-600 text-white shadow-md ring-1 ring-white'
                                   : 'bg-slate-900 text-slate-400 hover:bg-slate-800 border border-slate-800'
                               }`}
                             >
                               <span className="text-[10px] font-bold">{opt.label}</span>
-                              <span className="text-[9px] opacity-80">{opt.scoreName}</span>
+                              <span className="text-[8px] opacity-80 leading-tight">{opt.scoreName}</span>
                             </button>
                           );
                         })}
@@ -322,10 +406,14 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                 ? `ช็อต ${par - 1} (ลุ้นเบอร์ดี้)`
                 : chulaTargetScore === 'par'
                 ? `ช็อต ${par} (ลุ้นพาร์)`
-                : `ช็อต ${par + 1} (ลุ้นโบกี้)`}
+                : chulaTargetScore === 'bogey'
+                ? `ช็อต ${par + 1} (ลุ้นโบกี้)`
+                : chulaTargetScore === 'double'
+                ? `ช็อต ${par + 2} (ลุ้นดับเบิ้ล)`
+                : `ช็อต ${par + 3}+ (ลุ้นเกินดับ)`}
             </span>
           </div>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
             <button
               type="button"
               onClick={() => setChulaTargetScore('eagle')}
@@ -335,7 +423,7 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                   : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
               }`}
             >
-              <span className="text-xs font-black">🦅 ลุ้นอีเกิ้ล</span>
+              <span className="text-xs font-black">🦅 อีเกิ้ล</span>
               <span className="text-[9px] opacity-80">(-2) ช็อต {Math.max(1, par - 2)}</span>
             </button>
             <button
@@ -347,7 +435,7 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                   : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
               }`}
             >
-              <span className="text-xs font-black">🔴 ลุ้นเบอร์ดี้</span>
+              <span className="text-xs font-black">🔴 เบอร์ดี้</span>
               <span className="text-[9px] opacity-80">(-1) ช็อต {par - 1}</span>
             </button>
             <button
@@ -359,7 +447,7 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                   : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
               }`}
             >
-              <span className="text-xs font-black">🟢 ลุ้นพาร์</span>
+              <span className="text-xs font-black">🟢 พาร์</span>
               <span className="text-[9px] opacity-80">(E) ช็อต {par}</span>
             </button>
             <button
@@ -371,8 +459,32 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                   : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
               }`}
             >
-              <span className="text-xs font-black">⚪ ลุ้นโบกี้</span>
+              <span className="text-xs font-black">⚪ โบกี้</span>
               <span className="text-[9px] opacity-80">(+1) ช็อต {par + 1}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setChulaTargetScore('double')}
+              className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 flex flex-col items-center justify-center ${
+                chulaTargetScore === 'double'
+                  ? 'bg-amber-600 text-white shadow-lg ring-2 ring-amber-300'
+                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              <span className="text-xs font-black">🟡 ดับเบิ้ล</span>
+              <span className="text-[9px] opacity-80">(+2) ช็อต {par + 2}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setChulaTargetScore('triple')}
+              className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 flex flex-col items-center justify-center ${
+                isOverDouble(chulaTargetScore)
+                  ? 'bg-purple-600 text-white shadow-lg ring-2 ring-purple-300'
+                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              <span className="text-xs font-black">🟣 เกินดับ</span>
+              <span className="text-[9px] opacity-80">(+3+) ช็อต {par + 3}</span>
             </button>
           </div>
         </div>
@@ -683,43 +795,103 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
             </p>
           </div>
           {chulaCurrentScore && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-pink-500 text-white font-black">
-              บันทึกแล้ว: {chulaCurrentScore.toUpperCase()}
+            <span
+              className={`text-xs px-2.5 py-0.5 rounded-full font-black ${
+                isOverDouble(chulaCurrentScore)
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'bg-pink-500 text-white'
+              }`}
+            >
+              บันทึกแล้ว: {SCORE_LABELS[chulaCurrentScore].th} ({SCORE_LABELS[chulaCurrentScore].short})
             </span>
           )}
         </div>
 
-        <div className="grid grid-cols-5 gap-1.5">
-          {(['eagle', 'birdie', 'par', 'bogey', 'double'] as ScoreType[]).map((sc) => {
-            const isSelected = chulaCurrentScore === sc;
-            return (
-              <button
-                key={sc}
-                type="button"
-                onClick={() => handleSetChulaScore(sc)}
-                className={`py-2.5 rounded-xl text-xs font-black transition active:scale-95 flex flex-col items-center justify-center ${
-                  isSelected
-                    ? sc === 'eagle'
-                      ? 'bg-amber-500 text-slate-950 ring-2 ring-white shadow-lg'
-                      : sc === 'birdie'
-                      ? 'bg-red-600 text-white ring-2 ring-white shadow-lg'
-                      : sc === 'par'
-                      ? 'bg-emerald-600 text-white ring-2 ring-white shadow-lg'
-                      : sc === 'bogey'
-                      ? 'bg-slate-600 text-white ring-2 ring-white shadow-lg'
-                      : 'bg-amber-600 text-white ring-2 ring-white shadow-lg'
-                    : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800'
-                }`}
-              >
-                <span>
-                  {sc === 'eagle' ? 'อีเกิ้ล' : sc === 'birdie' ? 'ดี้' : sc === 'par' ? 'พาร์' : sc === 'bogey' ? 'กี้' : 'ดับ'}
-                </span>
-                <span className="text-[10px] font-normal opacity-75">
-                  {sc === 'eagle' ? '-2' : sc === 'birdie' ? '-1' : sc === 'par' ? 'E' : sc === 'bogey' ? '+1' : '+2'}
-                </span>
-              </button>
-            );
-          })}
+        <div className="space-y-2">
+          {/* Main 5 discrete scores */}
+          <div className="grid grid-cols-5 gap-1.5">
+            {(['eagle', 'birdie', 'par', 'bogey', 'double'] as ScoreType[]).map((sc) => {
+              const isSelected = chulaCurrentScore === sc;
+              return (
+                <button
+                  key={sc}
+                  type="button"
+                  onClick={() => {
+                    handleSetChulaScore(sc);
+                    setOpenOverDoubleChula(false);
+                  }}
+                  className={`py-2.5 rounded-xl text-xs font-black transition active:scale-95 flex flex-col items-center justify-center ${
+                    isSelected
+                      ? sc === 'eagle'
+                        ? 'bg-amber-500 text-slate-950 ring-2 ring-white shadow-lg'
+                        : sc === 'birdie'
+                        ? 'bg-red-600 text-white ring-2 ring-white shadow-lg'
+                        : sc === 'par'
+                        ? 'bg-emerald-600 text-white ring-2 ring-white shadow-lg'
+                        : sc === 'bogey'
+                        ? 'bg-slate-600 text-white ring-2 ring-white shadow-lg'
+                        : 'bg-amber-600 text-white ring-2 ring-white shadow-lg'
+                      : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800'
+                  }`}
+                >
+                  <span>
+                    {sc === 'eagle' ? 'อีเกิ้ล' : sc === 'birdie' ? 'ดี้' : sc === 'par' ? 'พาร์' : sc === 'bogey' ? 'กี้' : 'ดับ'}
+                  </span>
+                  <span className="text-[10px] font-normal opacity-75">
+                    {sc === 'eagle' ? '-2' : sc === 'birdie' ? '-1' : sc === 'par' ? 'E' : sc === 'bogey' ? '+1' : '+2'}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ปุ่มระบุสกอร์หากออกเกิน Double */}
+          <button
+            type="button"
+            onClick={() => setOpenOverDoubleChula(!openOverDoubleChula)}
+            className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-between border active:scale-[0.99] ${
+              isOverDouble(chulaCurrentScore)
+                ? 'bg-purple-950 border-purple-500 text-purple-200 shadow-md ring-2 ring-purple-400'
+                : 'bg-slate-950 text-slate-300 hover:text-white border-slate-800'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <span className="text-purple-400 font-black">🟣 เกินดับเบิ้ล</span>
+              <span className="text-[11px] text-slate-300">
+                {chulaCurrentScore && isOverDouble(chulaCurrentScore)
+                  ? `👉 บันทึกแล้ว: ${SCORE_LABELS[chulaCurrentScore].th} (+${SCORE_VALUES[chulaCurrentScore]} / ออก ${par + SCORE_VALUES[chulaCurrentScore]} สโตรก)`
+                  : '(กดระบุว่าออกเท่าไหร่: +3 ทริปเปิ้ล, +4 ควอด, +5...)'}
+              </span>
+            </span>
+            <span className="text-xs text-purple-400 font-bold">
+              {openOverDoubleChula || isOverDouble(chulaCurrentScore) ? '▲ ซ่อน' : '▼ กดระบุคะแนน'}
+            </span>
+          </button>
+
+          {/* Expanded over-double picker drawer for Chula */}
+          {(openOverDoubleChula || isOverDouble(chulaCurrentScore)) && (
+            <div className="grid grid-cols-4 gap-2 p-2.5 bg-slate-950 rounded-xl border border-purple-500/40">
+              {OVER_DOUBLE_OPTIONS.map((opt) => {
+                const isSelected = chulaCurrentScore === opt.type;
+                return (
+                  <button
+                    key={opt.type}
+                    type="button"
+                    onClick={() => handleSetChulaScore(opt.type)}
+                    className={`py-2.5 px-1 rounded-xl text-center transition active:scale-95 flex flex-col items-center justify-center border ${
+                      isSelected
+                        ? 'bg-purple-600 text-white font-black border-purple-300 shadow-lg ring-2 ring-white'
+                        : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border-slate-800'
+                    }`}
+                  >
+                    <span className="text-sm font-black">+{opt.delta}</span>
+                    <span className="text-xs font-bold">{opt.name}</span>
+                    <span className="text-[10px] opacity-80">ออก {par + opt.delta} สโตรก</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Next Hole Action */}

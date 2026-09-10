@@ -18,7 +18,15 @@ export function getMissedScore(target: ScoreType): ScoreType {
     case 'bogey':
       return 'double';
     case 'double':
-      return 'double';
+      return 'triple';
+    case 'triple':
+      return 'quad';
+    case 'quad':
+      return 'over5';
+    case 'over5':
+      return 'over6';
+    case 'over6':
+      return 'over6';
   }
 }
 
@@ -213,6 +221,27 @@ export function evaluatePuttingDecision(
     tacticalReasons.push(
       `แต้มโบกี้: ${pointsIfBogey > 0 ? '+' : ''}${pointsIfBogey} แต้ม vs ดับเบิ้ล: ${pointsIfDouble} แต้ม (Swing ${pointSwing} แต้ม)`,
       'เน้นแตะน้ำหนักให้ลูกหยุดข้างปากหลุมเพื่อเก็บแท็ปอินโบกี้ ป้องกันแต้มหลุด'
+    );
+  }
+  // =========================================================================
+  // SCENARIO 2B: DEFEND TROUBLE (เมื่อผู้เล่นเลือกลุ้นดับเบิ้ลหรือเกินดับเบิ้ล)
+  // =========================================================================
+  else if (
+    chulaTargetScore === 'double' ||
+    chulaTargetScore === 'triple' ||
+    chulaTargetScore === 'quad' ||
+    chulaTargetScore === 'over5' ||
+    chulaTargetScore === 'over6'
+  ) {
+    pointSwing = Math.abs(pointsIfBogey - pointsIfDouble);
+    verdict = 'DEFEND_DOUBLE';
+    verdictBadge = 'เซฟแต้มหยุดแผล';
+    badgeBg = 'bg-amber-700 text-white border-amber-500';
+    verdictTitle = '🛡️ พัตต์เซฟแต้ม (จำกัดความเสียหายอย่าให้แต้มไหล)';
+    primaryAdvice = `หลุมนี้เจอปัญหา ช็อตนี้กำลังพัตต์เซฟแต้ม แนะนำคุมสมาธิและน้ำหนักพัตต์ให้อยู่ในระยะเก็บ เพื่อไม่ให้เสียแต้ม Match Play เพิ่ม`;
+    tacticalReasons.push(
+      `แต้ม Match Play: พาร์ (${pointsIfPar}), โบกี้ (${pointsIfBogey}), ดับเบิ้ล (${pointsIfDouble})`,
+      'เน้นแตะน้ำหนักให้ปลอดภัย ลดความเสี่ยง 3-พัตต์'
     );
   }
   // =========================================================================

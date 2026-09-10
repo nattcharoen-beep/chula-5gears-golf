@@ -1,4 +1,4 @@
-﻿import { ScoreType, UniversityId, UNIVERSITIES } from '../types/golf';
+import { ScoreType, UniversityId, UNIVERSITIES } from '../types/golf';
 
 export const SCORE_VALUES: Record<ScoreType, number> = {
   eagle: -2,
@@ -6,6 +6,10 @@ export const SCORE_VALUES: Record<ScoreType, number> = {
   par: 0,
   bogey: 1,
   double: 2,
+  triple: 3,
+  quad: 4,
+  over5: 5,
+  over6: 6,
 };
 
 export const SCORE_LABELS: Record<ScoreType, { th: string; short: string; badge: string }> = {
@@ -13,8 +17,23 @@ export const SCORE_LABELS: Record<ScoreType, { th: string; short: string; badge:
   birdie: { th: 'เบอร์ดี้', short: 'ดี้ (-1)', badge: 'bg-red-500/20 text-red-400 border-red-500/40' },
   par: { th: 'พาร์', short: 'พาร์ (E)', badge: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' },
   bogey: { th: 'โบกี้', short: 'กี้ (+1)', badge: 'bg-slate-600/30 text-slate-300 border-slate-500/40' },
-  double: { th: 'ดับเบิ้ล', short: 'ดับเบิ้ล (+2)', badge: 'bg-amber-600/30 text-amber-300 border-amber-500/40' },
+  double: { th: 'ดับเบิ้ล', short: 'ดับ (+2)', badge: 'bg-amber-600/30 text-amber-300 border-amber-500/40' },
+  triple: { th: 'ทริปเปิ้ล', short: 'ทริป (+3)', badge: 'bg-purple-600/30 text-purple-300 border-purple-500/40' },
+  quad: { th: 'ควอดรูเปิ้ล', short: 'ควอด (+4)', badge: 'bg-rose-900/40 text-rose-300 border-rose-500/40' },
+  over5: { th: '+5', short: '+5', badge: 'bg-rose-950/60 text-rose-400 border-rose-600/40' },
+  over6: { th: '+6 ขึ้นไป', short: '+6+', badge: 'bg-rose-950/80 text-rose-500 border-rose-700/50' },
 };
+
+export const isOverDouble = (sc: ScoreType | null | undefined): boolean => {
+  return sc === 'triple' || sc === 'quad' || sc === 'over5' || sc === 'over6';
+};
+
+export const OVER_DOUBLE_OPTIONS: { type: ScoreType; delta: number; name: string }[] = [
+  { type: 'triple', delta: 3, name: 'ทริปเปิ้ล (+3)' },
+  { type: 'quad', delta: 4, name: 'ควอด (+4)' },
+  { type: 'over5', delta: 5, name: '+5' },
+  { type: 'over6', delta: 6, name: '+6 ขึ้นไป' },
+];
 
 export function calculateHoleZeroSumPoints(
   scores: Record<UniversityId, ScoreType | null>

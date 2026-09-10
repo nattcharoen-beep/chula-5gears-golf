@@ -117,7 +117,16 @@ export const FLIGHTS: Record<Flight, FlightInfo> = {
   },
 };
 
-export type ScoreType = 'eagle' | 'birdie' | 'par' | 'bogey' | 'double';
+export type ScoreType =
+  | 'eagle'
+  | 'birdie'
+  | 'par'
+  | 'bogey'
+  | 'double'
+  | 'triple'
+  | 'quad'
+  | 'over5'
+  | 'over6';
 
 export interface HoleConfig {
   holeNumber: number;

@@ -199,6 +199,12 @@ export const ScorecardTable: React.FC<ScorecardTableProps> = ({
                               ? 'bg-slate-800 text-white border-slate-600'
                               : sc === 'double'
                               ? 'bg-amber-950 text-amber-300 border-amber-500/70'
+                              : sc === 'triple'
+                              ? 'bg-purple-950 text-purple-300 border-purple-500/70'
+                              : sc === 'quad'
+                              ? 'bg-rose-950 text-rose-300 border-rose-500/70'
+                              : sc === 'over5' || sc === 'over6'
+                              ? 'bg-rose-950 text-rose-400 border-rose-600/70'
                               : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
                           }`}
                         >
@@ -208,6 +214,10 @@ export const ScorecardTable: React.FC<ScorecardTableProps> = ({
                           <option value="par" className="bg-slate-900 text-emerald-400 font-bold">พาร์ (E)</option>
                           <option value="bogey" className="bg-slate-900 text-white font-bold">กี้ (+1)</option>
                           <option value="double" className="bg-slate-900 text-amber-400 font-bold">ดับ (+2)</option>
+                          <option value="triple" className="bg-slate-900 text-purple-400 font-bold">ทริปเปิ้ล (+3)</option>
+                          <option value="quad" className="bg-slate-900 text-rose-400 font-bold">ควอด (+4)</option>
+                          <option value="over5" className="bg-slate-900 text-rose-500 font-bold">+5</option>
+                          <option value="over6" className="bg-slate-900 text-rose-600 font-bold">+6 ขึ้นไป</option>
                         </select>
 
                         {sc !== null && (

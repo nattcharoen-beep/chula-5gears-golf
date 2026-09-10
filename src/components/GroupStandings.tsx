@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Flight, HoleConfig, ScoreType, UniversityId, UNIVERSITIES } from '../types/golf';
-import { calculateHoleZeroSumPoints, calculateUniversityTournamentPoints } from '../utils/zeroSumEngine';
+import { calculateHoleZeroSumPoints, calculateUniversityTournamentPoints, SCORE_VALUES } from '../utils/zeroSumEngine';
 import { Trophy, AlertOctagon } from 'lucide-react';
 
 interface GroupStandingsProps {
@@ -57,11 +57,7 @@ export const GroupStandings: React.FC<GroupStandingsProps> = ({
       totalZeroSum[u] += pts[u];
       const sc = scores[u][hIdx];
       if (sc !== null) {
-        if (sc === 'eagle') totalGross[u] += holes[hIdx].par - 2;
-        else if (sc === 'birdie') totalGross[u] += holes[hIdx].par - 1;
-        else if (sc === 'par') totalGross[u] += holes[hIdx].par;
-        else if (sc === 'bogey') totalGross[u] += holes[hIdx].par + 1;
-        else if (sc === 'double') totalGross[u] += holes[hIdx].par + 2;
+        totalGross[u] += holes[hIdx].par + SCORE_VALUES[sc];
 
         if (u === 'chula') chulaHolesPlayed++;
       }
