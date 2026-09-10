@@ -49,7 +49,8 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
   const currentHoleConfig = holes[hIdx];
   const par = currentHoleConfig.par;
 
-  // Chula's putt condition
+  // Chula's target score & putt condition
+  const [chulaTargetScore, setChulaTargetScore] = useState<ScoreType>('par');
   const [chulaPuttDifficulty, setChulaPuttDifficulty] = useState<
     'easy_tap_in' | 'medium_6_10ft' | 'difficult_downhill'
   >('medium_6_10ft');
@@ -61,7 +62,8 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
     bulletStatus.bulletsRemaining,
     flight,
     chulaPuttDifficulty,
-    opponentsLive
+    opponentsLive,
+    chulaTargetScore
   );
 
   // Quick save Chula's confirmed score for this hole
@@ -289,59 +291,119 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
       </div>
 
       {/* 3. STEP 2: CHULA PUTT SETUP & DIFFICULTY */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 space-y-2.5 shadow-lg">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 space-y-3 shadow-lg">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold text-pink-400 uppercase tracking-wider flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-pink-500"></span>
-            2. พัตต์ของทีมจุฬาฯ
+            2. พัตต์ของทีมจุฬาฯ (หลุม {currentHole})
           </h3>
-          <span className="text-[11px] text-slate-400">เลือกระยะ/ความยาก</span>
+          <span className="text-[11px] text-slate-400">เลือกลุ้นสกอร์ / ระยะพัตต์</span>
         </div>
 
-        <div className="grid grid-cols-3 gap-1.5">
-          <button
-            type="button"
-            onClick={() => setChulaPuttDifficulty('easy_tap_in')}
-            className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 ${
-              chulaPuttDifficulty === 'easy_tap_in'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
-            }`}
-          >
-            จ่อ 1-3 ฟุต
-            <div className="text-[9px] font-normal opacity-80">ลง 90%</div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setChulaPuttDifficulty('medium_6_10ft')}
-            className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 ${
-              chulaPuttDifficulty === 'medium_6_10ft'
-                ? 'bg-pink-600 text-white shadow-md'
-                : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
-            }`}
-          >
-            กลาง 5-10 ฟุต
-            <div className="text-[9px] font-normal opacity-80">ลง 65%</div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setChulaPuttDifficulty('difficult_downhill')}
-            className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 ${
-              chulaPuttDifficulty === 'difficult_downhill'
-                ? 'bg-amber-600 text-white shadow-md'
-                : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
-            }`}
-          >
-            ลงเนินเร็ว
-            <div className="text-[9px] font-normal opacity-80">เสี่ยง 3 พัตต์</div>
-          </button>
+        {/* 2.1 ช็อตนี้ของจุฬาฯ กำลังลุ้นสกอร์อะไร */}
+        <div>
+          <div className="text-[10px] text-slate-400 mb-1.5 flex items-center justify-between">
+            <span>ช็อตพัตต์นี้กำลังลุ้น:</span>
+            <span className="text-pink-400 font-bold">
+              {chulaTargetScore === 'birdie'
+                ? `ช็อต ${par - 1} (ลุ้นเบอร์ดี้)`
+                : chulaTargetScore === 'par'
+                ? `ช็อต ${par} (ลุ้นพาร์)`
+                : `ช็อต ${par + 1} (ลุ้นโบกี้)`}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setChulaTargetScore('birdie')}
+              className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 flex flex-col items-center justify-center ${
+                chulaTargetScore === 'birdie'
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-950/40 ring-2 ring-red-400'
+                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              <span className="text-xs font-black">🔴 ลุ้นเบอร์ดี้</span>
+              <span className="text-[9px] opacity-80">(-1) ช็อต {par - 1}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setChulaTargetScore('par')}
+              className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 flex flex-col items-center justify-center ${
+                chulaTargetScore === 'par'
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950/40 ring-2 ring-emerald-400'
+                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              <span className="text-xs font-black">🟢 ลุ้นพาร์</span>
+              <span className="text-[9px] opacity-80">(E) ช็อต {par}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setChulaTargetScore('bogey')}
+              className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 flex flex-col items-center justify-center ${
+                chulaTargetScore === 'bogey'
+                  ? 'bg-slate-600 text-white shadow-lg ring-2 ring-slate-400'
+                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              <span className="text-xs font-black">⚪ ลุ้นโบกี้</span>
+              <span className="text-[9px] opacity-80">(+1) ช็อต {par + 1}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 2.2 ระยะพัตต์ / ความยากของไลน์ */}
+        <div>
+          <div className="text-[10px] text-slate-400 mb-1.5">
+            ระยะพัตต์ / ความยากของไลน์:
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setChulaPuttDifficulty('easy_tap_in')}
+              className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 ${
+                chulaPuttDifficulty === 'easy_tap_in'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              จ่อ 1-3 ฟุต
+              <div className="text-[9px] font-normal opacity-80">ลง 90%</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setChulaPuttDifficulty('medium_6_10ft')}
+              className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 ${
+                chulaPuttDifficulty === 'medium_6_10ft'
+                  ? 'bg-pink-600 text-white shadow-md'
+                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              กลาง 5-10 ฟุต
+              <div className="text-[9px] font-normal opacity-80">ลง 65%</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setChulaPuttDifficulty('difficult_downhill')}
+              className={`py-2 px-1 rounded-xl text-xs font-bold transition text-center active:scale-95 ${
+                chulaPuttDifficulty === 'difficult_downhill'
+                  ? 'bg-amber-600 text-white shadow-md'
+                  : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              ลงเนินเร็ว
+              <div className="text-[9px] font-normal opacity-80">เสี่ยง 3 พัตต์</div>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* 4. INSTANT AI GAME THEORY RECOMMENDATION BANNER (PLACED BELOW INPUTS AS REQUESTED) */}
       <div
         className={`p-4 rounded-2xl border transition shadow-xl ${
-          decision.verdict === 'DUMP_HANDICAP'
+          decision.verdict === 'HUNT_BIRDIE'
+            ? 'bg-gradient-to-br from-red-950/90 via-slate-900 to-slate-950 border-red-500/80 shadow-red-950/40'
+            : decision.verdict === 'DUMP_HANDICAP'
             ? 'bg-gradient-to-br from-purple-950/90 via-slate-900 to-slate-950 border-purple-500/80 shadow-purple-950/40'
             : decision.verdict === 'ATTACK_PAR'
             ? 'bg-gradient-to-br from-emerald-950/90 via-slate-900 to-slate-950 border-emerald-500/70 shadow-emerald-950/30'
@@ -368,6 +430,7 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
         </div>
 
         <h2 className="text-lg sm:text-xl font-black text-white mb-1.5 flex items-center gap-1.5">
+          {decision.verdict === 'HUNT_BIRDIE' && <Flame className="w-5 h-5 text-red-400 shrink-0" />}
           {decision.verdict === 'DUMP_HANDICAP' && <RefreshCw className="w-5 h-5 text-purple-400 shrink-0" />}
           {decision.verdict === 'ATTACK_PAR' && <Flame className="w-5 h-5 text-emerald-400 shrink-0" />}
           {decision.verdict === 'SAFE_BOGEY' && <Shield className="w-5 h-5 text-red-400 shrink-0" />}
@@ -380,43 +443,108 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
           {decision.primaryAdvice}
         </p>
 
-        <div className="grid grid-cols-3 gap-2 text-center text-xs">
-          {/* 1. พาร์ */}
-          <div className="bg-slate-900/80 p-2 rounded-xl border border-emerald-500/30">
-            <div className="text-[10px] text-emerald-400 font-bold">ถ้ายิงพาร์</div>
-            <div className="text-base font-black text-emerald-300">
-              {decision.expectedPointsIfPar > 0 ? `+${decision.expectedPointsIfPar}` : decision.expectedPointsIfPar} แต้ม
+        {/* 4-COLUMN DISCRETE OUTCOME GRID: BIRDIE / PAR / BOGEY / DOUBLE */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+          {/* 1. เบอร์ดี้ */}
+          <div
+            className={`p-2 rounded-xl border ${
+              decision.verdict === 'HUNT_BIRDIE'
+                ? 'bg-red-950/80 border-red-500/80 shadow-md shadow-red-950/50'
+                : 'bg-slate-900/80 border-red-500/30'
+            }`}
+          >
+            <div className="text-[10px] text-red-400 font-bold">ถ้าทำเบอร์ดี้</div>
+            <div className="text-base font-black text-red-300">
+              {decision.expectedPointsIfBirdie > 0
+                ? `+${decision.expectedPointsIfBirdie}`
+                : decision.expectedPointsIfBirdie}{' '}
+              แต้ม
             </div>
             <div className="text-[9px] text-slate-400">
-              {decision.expectedPointsIfPar === decision.expectedPointsIfBogey ? 'แต้มไม่เปลี่ยน' : 'ใช้ 1 กระสุน'}
+              {flight === 'A'
+                ? 'สแครตช์บุกแหลก'
+                : decision.bulletStatus === 'CRITICAL_DQ_RISK'
+                ? 'ระวัง DQ'
+                : 'บุกเก็บแต้ม'}
             </div>
           </div>
 
-          {/* 2. โบกี้ */}
-          <div className="bg-slate-900/80 p-2 rounded-xl border border-blue-500/30">
+          {/* 2. พาร์ */}
+          <div
+            className={`p-2 rounded-xl border ${
+              decision.verdict === 'ATTACK_PAR'
+                ? 'bg-emerald-950/80 border-emerald-500/80 shadow-md shadow-emerald-950/50'
+                : 'bg-slate-900/80 border-emerald-500/30'
+            }`}
+          >
+            <div className="text-[10px] text-emerald-400 font-bold">ถ้าทำพาร์</div>
+            <div className="text-base font-black text-emerald-300">
+              {decision.expectedPointsIfPar > 0
+                ? `+${decision.expectedPointsIfPar}`
+                : decision.expectedPointsIfPar}{' '}
+              แต้ม
+            </div>
+            <div className="text-[9px] text-slate-400">
+              {flight === 'A'
+                ? 'แต้มสแครตช์'
+                : decision.expectedPointsIfPar === decision.expectedPointsIfBogey
+                ? 'แต้มไม่เปลี่ยน'
+                : 'ใช้ 1 กระสุน'}
+            </div>
+          </div>
+
+          {/* 3. โบกี้ */}
+          <div
+            className={`p-2 rounded-xl border ${
+              decision.verdict === 'DUMP_BULLET' || decision.verdict === 'SAFE_BOGEY'
+                ? 'bg-blue-950/80 border-blue-500/80 shadow-md shadow-blue-950/50'
+                : 'bg-slate-900/80 border-blue-500/30'
+            }`}
+          >
             <div className="text-[10px] text-blue-400 font-bold">ถ้าเคาะโบกี้</div>
             <div className="text-base font-black text-blue-300">
-              {decision.expectedPointsIfBogey > 0 ? `+${decision.expectedPointsIfBogey}` : decision.expectedPointsIfBogey} แต้ม
+              {decision.expectedPointsIfBogey > 0
+                ? `+${decision.expectedPointsIfBogey}`
+                : decision.expectedPointsIfBogey}{' '}
+              แต้ม
             </div>
             <div className="text-[9px] text-slate-400">
-              {decision.expectedPointsIfBogey === decision.expectedPointsIfDouble ? 'แต้มเท่าดับเบิ้ล' : 'ประหยัดกระสุน'}
+              {flight === 'A'
+                ? 'เซฟสโตรก'
+                : decision.expectedPointsIfBogey === decision.expectedPointsIfDouble
+                ? 'แต้มเท่าดับเบิ้ล'
+                : 'ประหยัดกระสุน'}
             </div>
           </div>
 
-          {/* 3. ดับเบิ้ล */}
+          {/* 4. ดับเบิ้ล */}
           {decision.expectedPointsIfDouble === decision.expectedPointsIfBogey ? (
-            <div className="bg-purple-950/60 p-2 rounded-xl border border-purple-500/60 shadow-md shadow-purple-950/30">
+            <div
+              className={`p-2 rounded-xl border ${
+                decision.verdict === 'DUMP_HANDICAP'
+                  ? 'bg-purple-950/80 border-purple-500/80 shadow-md shadow-purple-950/50'
+                  : 'bg-slate-900/80 border-purple-500/40'
+              }`}
+            >
               <div className="text-[10px] text-purple-300 font-bold">ถ้าออกดับเบิ้ล</div>
               <div className="text-base font-black text-purple-200">
-                {decision.expectedPointsIfDouble > 0 ? `+${decision.expectedPointsIfDouble}` : decision.expectedPointsIfDouble} แต้ม
+                {decision.expectedPointsIfDouble > 0
+                  ? `+${decision.expectedPointsIfDouble}`
+                  : decision.expectedPointsIfDouble}{' '}
+                แต้ม
               </div>
-              <div className="text-[9px] text-purple-300 font-black">🎯 ทิ้งแคปได้กำไร!</div>
+              <div className="text-[9px] text-purple-300 font-black">
+                {flight === 'A' ? 'แต้มเท่าโบกี้' : '🎯 ทิ้งแคปได้กำไร!'}
+              </div>
             </div>
           ) : (
             <div className="bg-slate-900/80 p-2 rounded-xl border border-red-500/30">
               <div className="text-[10px] text-red-400 font-bold">ถ้าดับเบิ้ล</div>
               <div className="text-base font-black text-red-400">
-                {decision.expectedPointsIfDouble > 0 ? `+${decision.expectedPointsIfDouble}` : decision.expectedPointsIfDouble} แต้ม
+                {decision.expectedPointsIfDouble > 0
+                  ? `+${decision.expectedPointsIfDouble}`
+                  : decision.expectedPointsIfDouble}{' '}
+                แต้ม
               </div>
               <div className="text-[9px] text-slate-400">
                 เสียหาย ({decision.expectedPointsIfDouble - decision.expectedPointsIfBogey} แต้ม)
@@ -444,6 +572,7 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                 <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
                   <tr>
                     <th className="p-2.5">ฉากทัศน์คู่แข่ง</th>
+                    <th className="p-2.5 text-center text-red-400">ถ้าเราดี้</th>
                     <th className="p-2.5 text-center text-emerald-400">ถ้าเราพาร์</th>
                     <th className="p-2.5 text-center text-blue-400">ถ้าเรากี้</th>
                     <th className="p-2.5 text-center text-pink-400">Swing</th>
@@ -453,6 +582,14 @@ export const UnifiedHoleScreen: React.FC<UnifiedHoleScreenProps> = ({
                   {decision.scenarioBreakdown.map((scen, sIdx) => (
                     <tr key={sIdx}>
                       <td className="p-2.5 font-medium">{scen.scenario}</td>
+                      <td className="p-2.5 text-center font-bold text-red-400">
+                        {scen.chulaBirdiePoints !== undefined
+                          ? scen.chulaBirdiePoints > 0
+                            ? `+${scen.chulaBirdiePoints}`
+                            : `${scen.chulaBirdiePoints}`
+                          : '-'}{' '}
+                        แต้ม
+                      </td>
                       <td className="p-2.5 text-center font-bold text-emerald-400">
                         {scen.chulaParPoints > 0 ? `+${scen.chulaParPoints}` : scen.chulaParPoints} แต้ม
                       </td>

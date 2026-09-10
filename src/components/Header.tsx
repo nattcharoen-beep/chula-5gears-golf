@@ -56,18 +56,31 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           <div
-            className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 text-xs font-bold ${bulletStatus.statusColor}`}
+            className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 text-xs font-bold ${
+              flight === 'A'
+                ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                : bulletStatus.statusColor
+            }`}
           >
-            <span>🎯</span>
-            <span>
-              {bulletStatus.bulletsRemaining > 0 ? (
-                <span>{bulletStatus.bulletsRemaining} นัด</span>
-              ) : (
-                <span className="text-red-400 flex items-center gap-0.5">
-                  <AlertTriangle className="w-3 h-3" /> 0 นัด
+            {flight === 'A' ? (
+              <>
+                <span>🏆</span>
+                <span>สแครตช์ (No DQ)</span>
+              </>
+            ) : (
+              <>
+                <span>🎯</span>
+                <span>
+                  {bulletStatus.bulletsRemaining > 0 ? (
+                    <span>{bulletStatus.bulletsRemaining} นัด</span>
+                  ) : (
+                    <span className="text-red-400 flex items-center gap-0.5">
+                      <AlertTriangle className="w-3 h-3" /> 0 นัด
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
+              </>
+            )}
           </div>
 
           <button

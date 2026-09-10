@@ -27,7 +27,7 @@ const FLIGHT_DETAILS: Record<
     color: 'text-emerald-400',
     bg: 'bg-emerald-950/40',
     border: 'border-emerald-500/50',
-    desc: 'Scratch / Low HCP • เน้น Gross Score • ไม่มีกฎ DQ -4 Under',
+    desc: '🏆 แข่งขันแบบ Gross สด เล่นเหมือนไม่มีแคป • ไม่มีกฎ DQ อันเดอร์พาร์ • บุกทำเบอร์ดี้ได้เต็มที่!',
   },
   B: {
     name: 'Flight B',

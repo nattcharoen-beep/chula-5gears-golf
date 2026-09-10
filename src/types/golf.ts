@@ -138,12 +138,19 @@ export interface OpponentLiveState {
 }
 
 export interface GameTheoryDecisionResult {
-  verdict: 'ATTACK_PAR' | 'SAFE_BOGEY' | 'DUMP_BULLET' | 'DEFEND_DOUBLE' | 'DUMP_HANDICAP';
+  verdict:
+    | 'HUNT_BIRDIE'
+    | 'ATTACK_PAR'
+    | 'SAFE_BOGEY'
+    | 'DUMP_BULLET'
+    | 'DEFEND_DOUBLE'
+    | 'DUMP_HANDICAP';
   verdictTitle: string;
   verdictBadge: string;
   badgeBg: string;
   primaryAdvice: string;
-  pointSwing: number; // ผลต่างแต้มระหว่างพาร์กับโบกี้
+  pointSwing: number; // ผลต่างแต้มระหว่างช็อตบุกกับช็อตเซฟ
+  expectedPointsIfBirdie: number;
   expectedPointsIfPar: number;
   expectedPointsIfBogey: number;
   expectedPointsIfDouble: number;
@@ -155,6 +162,7 @@ export interface GameTheoryDecisionResult {
   scenarioBreakdown: {
     scenario: string;
     probabilityPct: number;
+    chulaBirdiePoints?: number;
     chulaParPoints: number;
     chulaBogeyPoints: number;
     netSwing: number;

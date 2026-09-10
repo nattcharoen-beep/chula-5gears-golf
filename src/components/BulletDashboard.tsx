@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { BulletStatus } from '../utils/bulletManager';
 import { AlertTriangle, Crosshair, CheckCircle, Info } from 'lucide-react';
 
@@ -39,49 +39,63 @@ export const BulletDashboard: React.FC<BulletDashboardProps> = ({ bulletStatus }
         </div>
       </div>
 
-      <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800/80">
-        <div className="flex items-center justify-between mb-3 text-xs">
-          <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-            <span>🎯 กระสุนโควตาอันเดอร์พาร์:</span>
-            <span className="text-pink-400 font-bold">
-              {bulletStatus.bulletsRemaining} / 4 นัด
+      {bulletStatus.flight === 'A' ? (
+        <div className="bg-emerald-950/40 p-4 rounded-xl border border-emerald-500/50">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">🏆</span>
+            <span className="font-bold text-emerald-300 text-sm">
+              Flight A (Scratch / Gross Match Play)
             </span>
-          </span>
-          <span className="text-slate-500 text-[11px]">
-            (ยิงได้ดีกว่าแต้มต่อสะสมได้สูงสุด 4 สโตรก)
-          </span>
+          </div>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            เล่นแบบสแครตช์เพียวๆ เหมือนไม่มีแคป ไม่มีการนับโควตากระสุน และไม่มีกฎ Anti-Sandbagging (DQ) สามารถบุกทำเบอร์ดี้และทำคะแนนได้เต็มที่ทุกลูก!
+          </p>
         </div>
+      ) : (
+        <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800/80">
+          <div className="flex items-center justify-between mb-3 text-xs">
+            <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+              <span>🎯 กระสุนโควตาอันเดอร์พาร์:</span>
+              <span className="text-pink-400 font-bold">
+                {bulletStatus.bulletsRemaining} / 4 นัด
+              </span>
+            </span>
+            <span className="text-slate-500 text-[11px]">
+              (ยิงได้ดีกว่าแต้มต่อสะสมได้สูงสุด 4 สโตรก)
+            </span>
+          </div>
 
-        <div className="grid grid-cols-4 gap-3">
-          {Array.from({ length: 4 }, (_, idx) => {
-            const isFilled = idx < remaining;
-            const isDanger = bulletStatus.bulletsRemaining <= 1;
+          <div className="grid grid-cols-4 gap-3">
+            {Array.from({ length: 4 }, (_, idx) => {
+              const isFilled = idx < remaining;
+              const isDanger = bulletStatus.bulletsRemaining <= 1;
 
-            return (
-              <div
-                key={idx}
-                className={`p-3 rounded-xl border text-center transition ${
-                  isFilled
-                    ? isDanger
-                      ? 'bg-amber-950/40 border-amber-500 text-amber-300'
-                      : 'bg-emerald-950/40 border-emerald-500 text-emerald-300'
-                    : 'bg-slate-900/40 border-slate-800 text-slate-600'
-                }`}
-              >
-                <div className="text-2xl mb-1">
-                  {isFilled ? (isDanger ? '🟡' : '🟢') : '⚪'}
+              return (
+                <div
+                  key={idx}
+                  className={`p-3 rounded-xl border text-center transition ${
+                    isFilled
+                      ? isDanger
+                        ? 'bg-amber-950/40 border-amber-500 text-amber-300'
+                        : 'bg-emerald-950/40 border-emerald-500 text-emerald-300'
+                      : 'bg-slate-900/40 border-slate-800 text-slate-600'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">
+                    {isFilled ? (isDanger ? '🟡' : '🟢') : '⚪'}
+                  </div>
+                  <div className="text-xs font-bold">
+                    {isFilled ? `กระสุนนัดที่ ${idx + 1}` : 'ยิงไปแล้ว'}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    {isFilled ? 'พร้อมใช้งาน' : 'ใช้โควตาแล้ว'}
+                  </div>
                 </div>
-                <div className="text-xs font-bold">
-                  {isFilled ? `กระสุนนัดที่ ${idx + 1}` : 'ยิงไปแล้ว'}
-                </div>
-                <div className="text-[10px] text-slate-400">
-                  {isFilled ? 'พร้อมใช้งาน' : 'ใช้โควตาแล้ว'}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
@@ -115,11 +129,15 @@ export const BulletDashboard: React.FC<BulletDashboardProps> = ({ bulletStatus }
         </div>
 
         <div className="bg-slate-950/60 p-3 rounded-xl border border-red-900/30">
-          <div className="text-[11px] text-red-400">สกอร์ต่ำสุดที่ห้ามหลุด (DQ)</div>
-          <div className="text-xl font-bold text-red-400 mt-0.5">
-            {bulletStatus.minAllowedGross} <span className="text-xs font-normal">Gross</span>
+          <div className="text-[11px] text-red-400">
+            {bulletStatus.flight === 'A' ? 'กฎ Anti-Sandbagging' : 'สกอร์ต่ำสุดที่ห้ามหลุด (DQ)'}
           </div>
-          <div className="text-[10px] text-red-500/80">ต่ำกว่านี้ = Net &lt; -4 Under</div>
+          <div className={`text-xl font-bold mt-0.5 ${bulletStatus.flight === 'A' ? 'text-emerald-400' : 'text-red-400'}`}>
+            {bulletStatus.flight === 'A' ? 'ไม่มี DQ' : `${bulletStatus.minAllowedGross} Gross`}
+          </div>
+          <div className="text-[10px] text-slate-400">
+            {bulletStatus.flight === 'A' ? 'สแครตช์บุกได้ 100%' : 'ต่ำกว่านี้ = Net < -4 Under'}
+          </div>
         </div>
       </div>
 
