@@ -64,30 +64,32 @@ export const App: React.FC = () => {
     return 16;
   });
 
-  const [currentHole, setCurrentHole] = useState<number>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (typeof parsed.currentHole === 'number') return parsed.currentHole;
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return 1;
-  });
+  // Always start at Hole 1 when entering the app
+  const [currentHole, setCurrentHole] = useState<number>(1);
 
   const [activeTab, setActiveTab] = useState<'hole' | 'scorecard' | 'standings' | 'bullets'>('hole');
   const [holes] = useState<HoleConfig[]>(DEFAULT_18_HOLES);
 
-  const [showHcpModal, setShowHcpModal] = useState<boolean>(() => {
-    return !localStorage.getItem('chula_5gears_hcp_confirmed_v1');
-  });
+  // When entering the app, always prompt for handicap first
+  const [showHcpModal, setShowHcpModal] = useState<boolean>(true);
+  const [isInitialEntry, setIsInitialEntry] = useState<boolean>(true);
 
   const handleConfirmHcp = (newHcp: number, newFlight: Flight) => {
     setHandicap(newHcp);
     setFlight(newFlight);
-    localStorage.setItem('chula_5gears_hcp_confirmed_v1', 'true');
+    if (isInitialEntry) {
+      setCurrentHole(1);
+      setIsInitialEntry(false);
+    }
+    setShowHcpModal(false);
+  };
+
+  const handleCloseHcpModal = () => {
+    if (isInitialEntry) {
+      setCurrentHole(1);
+      setIsInitialEntry(false);
+    }
+    setShowHcpModal(false);
   };
 
   const [scores, setScores] = useState<Record<UniversityId, (ScoreType | null)[]>>(() => {
@@ -224,6 +226,8 @@ export const App: React.FC = () => {
       setScores(emptyScores);
       setOpponentsByHole(createDefaultOpponentsMap(emptyScores));
       setCurrentHole(1);
+      setIsInitialEntry(true);
+      setShowHcpModal(true);
     }
   };
 
@@ -245,7 +249,10 @@ export const App: React.FC = () => {
         onSelectHole={setCurrentHole}
         flight={flight}
         handicap={handicap}
-        onOpenHcpModal={() => setShowHcpModal(true)}
+        onOpenHcpModal={() => {
+          setIsInitialEntry(false);
+          setShowHcpModal(true);
+        }}
         bulletStatus={bulletStatus}
         onResetRound={handleResetRound}
       />
@@ -253,10 +260,11 @@ export const App: React.FC = () => {
       {/* Mobile-First Big Handicap Setup Modal */}
       <HandicapModal
         isOpen={showHcpModal}
-        onClose={() => setShowHcpModal(false)}
+        onClose={handleCloseHcpModal}
         currentHcp={handicap}
         onSelectHcp={handleConfirmHcp}
         canClose={true}
+        isInitialEntry={isInitialEntry}
       />
 
       {/* Main Content Area: Persistent tabs with zero unmounting */}

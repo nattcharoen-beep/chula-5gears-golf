@@ -8,6 +8,7 @@ interface HandicapModalProps {
   currentHcp: number;
   onSelectHcp: (hcp: number, flight: Flight) => void;
   canClose?: boolean;
+  isInitialEntry?: boolean;
 }
 
 export function getFlightFromHandicap(hcp: number): Flight {
@@ -61,6 +62,7 @@ export const HandicapModal: React.FC<HandicapModalProps> = ({
   currentHcp,
   onSelectHcp,
   canClose = true,
+  isInitialEntry = false,
 }) => {
   const [selectedHcp, setSelectedHcp] = React.useState<number>(currentHcp);
 
@@ -114,7 +116,7 @@ export const HandicapModal: React.FC<HandicapModalProps> = ({
             เลือกแต้มต่อ (Handicap)
           </h2>
           <p className="text-xs text-slate-400">
-            กดเลือกตัวเลขแคปของคุณ (0 - 24) ระบบจะคำนวณไฟลท์และโควตากระสุนให้อัตโนมัติ
+            กดเลือกตัวเลขแคปของคุณ (0 - 24) เพื่อคำนวณไฟลท์และโควตากระสุน แล้วเริ่มแข่งที่หลุม 1
           </p>
         </div>
 
@@ -279,7 +281,11 @@ export const HandicapModal: React.FC<HandicapModalProps> = ({
           className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-600 via-rose-600 to-pink-600 hover:from-pink-500 hover:to-rose-500 text-white text-sm font-black transition shadow-xl shadow-pink-950/50 flex items-center justify-center gap-2 active:scale-95"
         >
           <CheckCircle className="w-5 h-5 text-white" />
-          <span>ยืนยันแคป {selectedHcp} ({flightInfo.name}) & เข้าสู่สนาม</span>
+          <span>
+            {isInitialEntry
+              ? `ยืนยันแคป ${selectedHcp} (${flightInfo.name}) & เริ่มที่หลุม 1`
+              : `บันทึกแคป ${selectedHcp} (${flightInfo.name})`}
+          </span>
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
