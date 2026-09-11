@@ -177,6 +177,7 @@ export interface GameTheoryDecisionResult {
     chulaBirdiePoints?: number;
     chulaParPoints: number;
     chulaBogeyPoints: number;
+    chulaDoublePoints?: number;
     netSwing: number;
   }[];
 }

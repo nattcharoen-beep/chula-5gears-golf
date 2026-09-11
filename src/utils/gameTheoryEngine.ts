@@ -115,7 +115,7 @@ export function evaluatePuttingDecision(
   const scoresIfDouble = { ...oppScoresLikely, chula: 'double' as ScoreType };
   const pointsIfDouble = calculateHoleZeroSumPoints(scoresIfDouble).chula; // Integer -4 to +4
 
-  let pointSwing = pointsIfPar - pointsIfBogey; // Standard swing between Par and Bogey
+  let pointSwing = Math.abs(pointsIfPar - pointsIfBogey); // Standard swing between Par and Bogey
 
   // Integer bullets remaining
   const intBullets = Math.round(chulaBulletsRemaining);
@@ -141,7 +141,7 @@ export function evaluatePuttingDecision(
   // =========================================================================
   if (chulaTargetScore === 'eagle') {
     verdict = 'HUNT_EAGLE';
-    pointSwing = pointsIfEagle - pointsIfBirdie;
+    pointSwing = Math.abs(pointsIfEagle - pointsIfBirdie);
     badgeBg = 'bg-amber-500 text-black border-amber-300 font-black';
     verdictBadge = 'ลุยอีเกิ้ลเต็มตัว';
     verdictTitle = `🦅 ลุยอีเกิ้ลเต็มตัว! (โอกาสคว้าแต้มสูงสุด +${pointsIfEagle} แต้ม)`;
@@ -162,7 +162,7 @@ export function evaluatePuttingDecision(
   // =========================================================================
   else if (chulaTargetScore === 'birdie') {
     verdict = 'HUNT_BIRDIE';
-    pointSwing = pointsIfBirdie - pointsIfPar; // Swing ระหว่างเบอร์ดี้กับพาร์
+    pointSwing = Math.abs(pointsIfBirdie - pointsIfPar); // Swing ระหว่างเบอร์ดี้กับพาร์
     badgeBg = 'bg-red-600 text-white border-red-400';
 
     if (isFlightA) {
@@ -212,7 +212,7 @@ export function evaluatePuttingDecision(
   // SCENARIO 2: DEFEND DOUBLE / BOGEY TARGET (เมื่อผู้เล่นเลือกลุ้นโบกี้)
   // =========================================================================
   else if (chulaTargetScore === 'bogey') {
-    pointSwing = pointsIfBogey - pointsIfDouble;
+    pointSwing = Math.abs(pointsIfBogey - pointsIfDouble);
     verdict = 'DEFEND_DOUBLE';
     verdictBadge = 'เซฟโบกี้ชัวร์';
     badgeBg = 'bg-slate-700 text-white border-slate-500';
@@ -363,49 +363,73 @@ export function evaluatePuttingDecision(
     );
   }
   // =========================================================================
-  // SCENARIO 7: STANDARD ATTACK PAR (สู้พาร์เต็มตัว เมื่อเลือกช็อตลุ้นพาร์)
+  // SCENARIO 7: STANDARD ATTACK / DEFEND PAR (เมื่อเลือกช็อตลุ้นพาร์)
   // =========================================================================
   else {
     verdict = 'ATTACK_PAR';
-    badgeBg = 'bg-emerald-600 text-white border-emerald-400';
 
-    if (isFlightA) {
-      verdictTitle = '🔥 สู้พาร์เต็มตัว! (Point Swing สูง ลุยสแครตช์เต็มที่)';
-      verdictBadge = 'สู้พาร์สแครตช์';
-      if (birdieOpponents.length > 0) {
-        primaryAdvice = `คู่แข่งหลุมนี้ออกเบอร์ดี้ไปแล้ว (${birdieOpponents.join(
-          ', '
-        )}) หากเราเก็บพาร์ได้แต้มจะอยู่ที่ ${pointsIfPar} แต้ม แต่ถ้าพลาดโบกี้แต้มจะรูดไปถึง ${pointsIfBogey} แต้ม! ต้องสู้พาร์เต็มตัวเพื่อหยุดแต้มไหล (💡 หากช็อตนี้ของจุฬาฯ มีโอกาสลุ้นเบอร์ดี้ ให้แตะปุ่ม [🔴 ลุ้นเบอร์ดี้] ด้านบนเพื่อลุยแต้มบวก +${pointsIfBirdie} แต้ม!)`;
+    if (pointsIfPar > 0) {
+      // Par wins positive points
+      badgeBg = 'bg-emerald-600 text-white border-emerald-400';
+      verdictBadge = isFlightA ? 'สู้พาร์คว้าแต้มบวก' : 'สู้พาร์คว้าแต้มบวก';
+      verdictTitle = `🔥 สู้พาร์คว้าแต้มบวก! (พัตต์ลงคว้า +${pointsIfPar} แต้ม)`;
+
+      if (isFlightA) {
+        primaryAdvice = `พัตต์พาร์ลงจะคว้า +${pointsIfPar} แต้ม นำรอบวง หากพลาดโบกี้แต้มจะหล่นไปที่ ${
+          pointsIfBogey > 0 ? '+' : ''
+        }${pointsIfBogey} แต้ม (ต่างกันถึง ${pointSwing} แต้ม!) ในไฟลท์ A เล่นสแครตช์เพียวๆ ไม่มีแต้มต่อ ไม่มีกฎ DQ สู้พาร์ให้ลงเต็มกำลัง`;
+        tacticalReasons.push(
+          `Point Swing ในหลุมนี้สูงถึง ${pointSwing} แต้มเต็ม (ส่วนต่างระหว่างพาร์กับโบกี้)`,
+          'ไฟลท์ A (สแครตช์): เล่น Gross สด ไม่มีแคป ไม่โดนกฎ DQ สู้ได้อย่างมั่นใจ 100%',
+          pointsIfDouble === pointsIfBogey
+            ? 'หากพัตต์พาร์ไม่ลง แล้วหลุดดับเบิ้ล แต้มยังเท่ากับโบกี้ จึงสามารถพัตต์สู้พาร์ได้เต็มที่ไร้กังวล'
+            : 'ตั้งใจคุมน้ำหนักพัตต์พาร์ให้ถึงหลุม'
+        );
       } else {
-        primaryAdvice = `พัตต์พาร์ลงจะคว้า ${
-          pointsIfPar > 0 ? '+' : ''
-        }${pointsIfPar} แต้ม แต่ถ้ายอมโบกี้แต้มจะหล่นไปที่ ${pointsIfBogey} แต้ม ส่วนต่างสูงถึง ${pointSwing} แต้มเต็ม! ในไฟลท์ A เล่นสแครตช์เพียวๆ ไม่มีแต้มต่อ ไม่มีกฎ DQ สู้พาร์ได้เต็มกำลัง`;
+        primaryAdvice = `พัตต์พาร์ลงจะคว้า +${pointsIfPar} แต้ม แต่ถ้าพลาดโบกี้แต้มจะหล่นไปที่ ${
+          pointsIfBogey > 0 ? '+' : ''
+        }${pointsIfBogey} แต้ม (ต่างกันถึง ${pointSwing} แต้ม!) โควตากระสุนเหลือ ${intBullets} นัด ปลอดภัย คุ้มค่ามากที่จะสู้พาร์`;
+        tacticalReasons.push(
+          `Point Swing ในหลุมนี้สูงถึง ${pointSwing} แต้มเต็ม (ส่วนต่างระหว่างพาร์กับโบกี้)`,
+          `สถานะกระสุนเหลือ ${intBullets} นัด ปลอดภัย คุ้มค่ามากที่จะใช้กระสุน 1 นัดเพื่อแลกกับแต้มในหลุมนี้`,
+          pointsIfDouble === pointsIfBogey
+            ? 'หากพัตต์พาร์ไม่ลง แล้วหลุดดับเบิ้ล แต้มยังเท่ากับโบกี้ จึงสามารถพัตต์สู้พาร์ได้เต็มที่ไร้กังวล'
+            : 'ตั้งใจคุมน้ำหนักพัตต์พาร์ให้ถึงหลุม'
+        );
       }
+    } else if (pointsIfPar === 0) {
+      // Par is neutral (0 points)
+      badgeBg = 'bg-blue-600 text-white border-blue-400';
+      verdictBadge = 'พาร์ประคองเสมอ';
+      verdictTitle = '⚖️ พัตต์พาร์ประคองเสมอ (เก็บ 0 แต้ม ไม่เสียเปรียบ)';
+
+      primaryAdvice = `พัตต์พาร์ลงจะได้ 0 แต้ม (ประคองผลเสมอ ไม่เสียเปรียบใคร) แต่ถ้าพลาดโบกี้แต้มจะรูดติดลบถึง ${pointsIfBogey} แต้ม! (ต่างกัน ${pointSwing} แต้ม) ต้องตั้งใจคุมน้ำหนักพัตต์พาร์ให้อยู่ในไลน์เพื่อเซฟผลเสมอ`;
       tacticalReasons.push(
-        `Point Swing ในหลุมนี้สูงถึง ${pointSwing} แต้มเต็ม (ส่วนต่างระหว่างพาร์กับโบกี้)`,
-        'ไฟลท์ A (สแครตช์): เล่น Gross สด ไม่มีแคป ไม่โดนกฎ DQ สู้ได้อย่างมั่นใจ 100%',
-        pointsIfDouble === pointsIfBogey
-          ? 'หากพัตต์พาร์ไม่ลง แล้วหลุดดับเบิ้ล แต้มยังเท่ากับโบกี้ จึงสามารถพัตต์สู้พาร์ได้เต็มที่ไร้กังวล'
-          : 'ตั้งใจคุมน้ำหนักพัตต์พาร์ให้ถึงหลุม'
+        `ความต่างระหว่างพาร์กับโบกี้ (Swing): ${pointSwing} แต้มเต็ม (พลาดโบกี้จะติดลบทันที ${pointsIfBogey} แต้ม)`,
+        'พัตต์พาร์ลงจะประคองแต้มรวมของทีมให้คงที่ ไม่เสียเปรียบคู่แข่ง',
+        isFlightA
+          ? 'ไฟลท์ A (สแครตช์): ไม่มีกฎ DQ มุ่งมั่นพัตต์พาร์ประคองเสมอ'
+          : `สถานะกระสุนเหลือ ${intBullets} นัด พาร์รักษาสถานะเสมอได้ดี`
       );
     } else {
-      verdictTitle = '🔥 สู้พาร์เต็มตัว! (Point Swing สูง คุ้มค่าแลกกระสุน)';
-      verdictBadge = 'สู้พาร์เต็มตัว';
-      if (birdieOpponents.length > 0) {
-        primaryAdvice = `คู่แข่งหลุมนี้ออกเบอร์ดี้ไปแล้ว (${birdieOpponents.join(
-          ', '
-        )}) หากเราเก็บพาร์ได้แต้มจะอยู่ที่ ${pointsIfPar} แต้ม แต่ถ้าพลาดโบกี้แต้มจะรูดไปถึง ${pointsIfBogey} แต้ม! ต้องสู้พาร์เต็มตัวเพื่อหยุดแต้มไหล (💡 หากช็อตนี้ของจุฬาฯ มีโอกาสลุ้นเบอร์ดี้ ให้แตะปุ่ม [🔴 ลุ้นเบอร์ดี้] ด้านบนเพื่อลุยแต้มบวก +${pointsIfBirdie} แต้ม!)`;
-      } else {
-        primaryAdvice = `คู่แข่งด้านหลังมีโอกาสทำแต้มดี การยอมโบกี้จะทำให้แต้มหล่นไปที่ ${pointsIfBogey} แต้ม แต่ถ้าพัตต์พาร์ลงจะคว้า ${
-          pointsIfPar > 0 ? '+' : ''
-        }${pointsIfPar} แต้ม ส่วนต่างสูงถึง ${pointSwing} แต้มเต็ม! คุ้มค่ามากที่จะสู้`;
-      }
+      // pointsIfPar < 0 (Par is negative due to opponent birdies)
+      badgeBg = 'bg-amber-600 text-white border-amber-400';
+      verdictBadge = 'เซฟพาร์กั้นแต้มไหล';
+      verdictTitle = `🛡️ พัตต์เซฟพาร์กั้นแต้มไหล! (จำกัดแผลที่ ${pointsIfPar} แต้ม)`;
+
+      primaryAdvice = `คู่แข่งทำแต้มได้ดี (${
+        birdieOpponents.length > 0 ? birdieOpponents.join(', ') : 'คู่แข่ง'
+      }) หากเราเก็บพาร์จะหยุดแผลไว้ที่ ${pointsIfPar} แต้ม ไม่ให้รูดลงไปถึง ${pointsIfBogey} แต้ม! (ต่างกัน ${pointSwing} แต้ม) ต้องพัตต์พาร์ให้ลงเพื่อกั้นแต้มไม่ให้ไหล${
+        pointsIfBirdie > pointsIfPar
+          ? ` (💡 หากช็อตนี้ของจุฬาฯ มีโอกาสลุ้นเบอร์ดี้ ให้แตะปุ่ม [🔴 เบอร์ดี้] ด้านบนเพื่อลุยแต้มบวก +${pointsIfBirdie} แต้ม)`
+          : ''
+      }`;
       tacticalReasons.push(
-        `Point Swing ในหลุมนี้สูงถึง ${pointSwing} แต้มเต็ม (ส่วนต่างระหว่างพาร์กับโบกี้)`,
-        `สถานะกระสุนเหลือ ${intBullets} นัด ปลอดภัย คุ้มค่ามากที่จะใช้กระสุน 1 นัดเพื่อแลกกับแต้มในหลุมนี้`,
-        pointsIfDouble === pointsIfBogey
-          ? 'หากพัตต์พาร์ไม่ลง แล้วหลุดดับเบิ้ล แต้มยังเท่ากับโบกี้ จึงสามารถพัตต์สู้พาร์ได้เต็มที่ไร้กังวล'
-          : 'ตั้งใจคุมน้ำหนักพัตต์พาร์ให้ถึงหลุม'
+        `คู่แข่งทำแต้มนำหน้า (${birdieOpponents.length > 0 ? birdieOpponents.join(', ') : 'คู่แข่ง'}): พัตต์พาร์ลงช่วยกั้นแต้มหยุดที่ ${pointsIfPar} แต้ม ไม่ให้ไหลลึกถึง ${pointsIfBogey} แต้ม`,
+        `ความต่างระหว่างพาร์กับโบกี้ (Swing): เซฟได้ ${pointSwing} แต้มเต็ม`,
+        isFlightA
+          ? 'ไฟลท์ A (สแครตช์): ไม่มีกฎ DQ คุมสมาธิพัตต์พาร์กั้นแต้มหยุดความเสียหาย'
+          : 'คุมน้ำหนักพัตต์พาร์ให้อยู่ในระยะเก็บ เพื่อไม่ให้เสียแต้มเพิ่ม'
       );
     }
   }
@@ -421,7 +445,8 @@ export function evaluatePuttingDecision(
       chulaBirdiePoints: pointsIfBirdie,
       chulaParPoints: pointsIfPar,
       chulaBogeyPoints: pointsIfBogey,
-      netSwing: pointSwing,
+      chulaDoublePoints: pointsIfDouble,
+      netSwing: Math.abs(pointSwing),
     });
   } else {
     // Scenario 1: Likely
@@ -432,7 +457,8 @@ export function evaluatePuttingDecision(
       chulaBirdiePoints: pointsIfBirdie,
       chulaParPoints: pointsIfPar,
       chulaBogeyPoints: pointsIfBogey,
-      netSwing: pointSwing,
+      chulaDoublePoints: pointsIfDouble,
+      netSwing: Math.abs(pointSwing),
     });
 
     // Scenario 2: Opponents Best
@@ -454,7 +480,8 @@ export function evaluatePuttingDecision(
       chulaBirdiePoints: bestBirdiePts,
       chulaParPoints: bestParPts,
       chulaBogeyPoints: bestBogeyPts,
-      netSwing: swingScenario2,
+      chulaDoublePoints: bestDoublePts,
+      netSwing: Math.abs(swingScenario2),
     });
 
     // Scenario 3: Opponents Miss
@@ -476,7 +503,8 @@ export function evaluatePuttingDecision(
       chulaBirdiePoints: missBirdiePts,
       chulaParPoints: missParPts,
       chulaBogeyPoints: missBogeyPts,
-      netSwing: swingScenario3,
+      chulaDoublePoints: missDoublePts,
+      netSwing: Math.abs(swingScenario3),
     });
   }
 
